@@ -1,6 +1,6 @@
 # TeensyCyberRC
 
-If CyberRC is the virtual interface from controller, then TeensyCyberRC is the physical interface.
+If CyberRC is the virtual interface from an autonomous controller, then TeensyCyberRC is the physical interface.
 TeensyCyberRC runs onboard a Teensy 4.1, and emulates a gamepad or joystick. 
 It consumers Protobuf encoded messages over Serial and outputs them as gamepad outputs.
 This allows controllers to send outputs to video games or other applications that require game pad or joystick inputs.
