@@ -5,7 +5,6 @@
 
 cyberrc_RCData rc_message = cyberrc_RCData_init_zero;
 Stream& proto = Serial;
-Stream& debug = SerialUSB1;
 
 void setup() {
     // Start the serial communication
@@ -26,16 +25,11 @@ void loop() {
         pb_in = pb_istream_from_serial(proto, 36);
         proto_decode_status = pb_decode(&pb_in, cyberrc_RCData_fields, &rc_message);
         if (!proto_decode_status) {
-            debug.println("Decoding failed");
             return;
         }
-
-
-
-
         // You can extend this logic for more buttons/axes based on serial input
     } else {
-        Joystick.X(1);
+        Joystick.X(0);
         Joystick.button(1, val);
         val = !val;
     }
