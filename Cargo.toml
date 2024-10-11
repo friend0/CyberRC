@@ -2,7 +2,15 @@
 name = "CyberRC"
 version = "0.1.0"
 edition = "2021"
+build = "build.rs"
 
 [dependencies]
 chrono = "0.4.38"
+clap = "4.5.20"
 gilrs = "0.10.9"
+prost = "0.13.3"
+prost-build = "0.13.3"
+serialport = "4.5.1"
+
+[build-dependencies]
+prost-build = "0.13.3"
