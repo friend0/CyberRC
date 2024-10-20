@@ -57,6 +57,14 @@ const unsigned long TriggerDuration = CycleTime / (TriggerMax * 2);  // Go up an
 unsigned long triggerTimeLast = 0;
 uint8_t triggerVal = 0;
 boolean triggerDirection = 0;
+#include <SoftwareSerial.h>
+
+SoftwareSerial debug(0, 1);
+
+// Config Settings
+const unsigned long CycleTime = 5000;  // ms
+const int SafetyPin = 34;  // Ground this pin to prevent inputs
+
 
 // Joystick Setup
 const int JoyMax = 32767;  // int16_t max
@@ -112,6 +120,12 @@ void loop() {
             blink_loop(ledPin, 250);
         }
     }
+    
+  debug.begin(115200);
+}
+
+void loop() {
+
 
 	if (digitalRead(SafetyPin) == LOW) {
 		return;
@@ -155,3 +169,4 @@ void loop() {
 
 	// Send values to PC
 	XInput.send();
+}
