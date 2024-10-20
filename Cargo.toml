@@ -5,9 +5,9 @@ edition = "2021"
 build = "build.rs"
 
 [dependencies]
+anyhow = "1.0.89"
 chrono = "0.4.38"
-clap = "4.5.20"
-gilrs = "0.10.9"
+clap = { version = "4.5.20", features = ["derive"] }
 prost = "0.13.3"
 prost-build = "0.13.3"
 serialport = "4.5.1"
