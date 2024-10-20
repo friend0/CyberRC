@@ -155,4 +155,3 @@ void loop() {
 
 	// Send values to PC
 	XInput.send();
-}
