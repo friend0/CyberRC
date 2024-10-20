@@ -1,4 +1,4 @@
-#include "nanopbSerial.h"
+#include "nanopbUdp.h"
 #include <Stream.h>
 
 static bool pb_print_write(pb_ostream_t *stream, const pb_byte_t *buf, size_t count)
@@ -8,7 +8,7 @@ static bool pb_print_write(pb_ostream_t *stream, const pb_byte_t *buf, size_t co
     return written == count;
 };
 
-pb_ostream_s pb_ostream_from_serial(Print &p)
+pb_ostream_s pb_ostream_from_udp(Print &p)
 {
     return {pb_print_write, &p, SIZE_MAX, 0};
 };
@@ -20,7 +20,7 @@ static bool pb_stream_read(pb_istream_t *stream, pb_byte_t *buf, size_t count)
     return read == count;
 };
 
-pb_istream_s pb_istream_from_serial(Stream &s, size_t msglen)
+pb_istream_s pb_istream_from_udp(Stream &s, size_t msglen)
 {
     s.setTimeout(0);
 #ifndef PB_NO_ERRMSG
