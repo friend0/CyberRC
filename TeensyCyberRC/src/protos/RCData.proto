@@ -4,10 +4,10 @@ package cyberrc;
 
 // Message definition for RC data
 message RCData {
-    float Aileron = 1;
-    float Elevator = 2;
-    float Throttle = 3;
-    float Rudder = 4;   
+    int32 Aileron = 1;
+    int32 Elevator = 2;
+    int32 Throttle = 3;
+    int32 Rudder = 4;   
     int32 Arm = 5;
     int32 Mode = 6;
 }
