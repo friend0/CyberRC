@@ -4,7 +4,7 @@
 
 #include "RCData.pb.h"
 #include <SoftwareSerial.h>
-#include <nanopbUdp.h>
+// #include <nanopbUdp.h>
 #include <nanopbSerial.h>
 #include <pb.h>
 #include "usb_desc.h"
@@ -40,7 +40,8 @@ unsigned int localPort = 6969;
 Stream &proto = Udp;
 
 // Joystick Setup
-const int JoyMax = 32767; // int16_t max
+const int JoyMin = -1500;
+const int JoyMax = 1500;
 const double angle_precision =
     (2 * PI) / (CycleTime / 4); // 4 because 250 Hz update rate
 double angle = 0.0;
@@ -52,6 +53,8 @@ void blink_loop(int pin, int delay_ms) {
     delay(delay_ms);
   }
 }
+
+#define CLAMP(val, min_val, max_val) ((val) < (min_val) ? (min_val) : ((val) > (max_val) ? (max_val) : (val)))
 
 void setup() {
   // Safety Pin Setup
@@ -92,22 +95,23 @@ void loop() {
       if (proto_decode_status) {
         if (debug.availableForWrite()) {
           // Process XInput Output
-          int axis_x = sin(angle) * JoyMax;
-          int axis_y = cos(angle) * JoyMax;
+          int l_axis_x = CLAMP(rc_message.Throttle, -32768, 32767);
+          int l_axis_y = CLAMP(rc_message.Rudder, -32768, 32767);
+          int r_axis_x = CLAMP(rc_message.Aileron, -32768, 32767);
+          int r_axis_y = CLAMP(rc_message.Elevator, -32768, 32767);
 
-          angle += angle_precision;
-          if (angle >= 360) {
-            angle -= 360;
-          }
-          XInput.setJoystick(JOY_LEFT, axis_x, axis_y);   // Clockwise
-          XInput.setJoystick(JOY_RIGHT, -axis_x, axis_y); // Counter-clockwise
-          }
+          XInput.setJoystick(JOY_LEFT, l_axis_x, l_axis_y);   // Clockwise
+          XInput.setJoystick(JOY_RIGHT, r_axis_x, r_axis_y); // Counter-clockwise
       } else {
-        Serial1.printf("Decode failed: %d\n", proto_decode_status);
+            debug.printf("Decode failed: %d\n", proto_decode_status);
+            // TODO: send the last output up to the limit
       }
     }
+  }
   else {
     debug.write("No data");
+    XInput.setJoystick(JOY_LEFT, 0, 0);   // Clockwise
+    XInput.setJoystick(JOY_RIGHT, 0, 0); // Counter-clockwise
     delay(5000); 
   }
   bool proto_decode_status;
