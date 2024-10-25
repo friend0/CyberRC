@@ -1,5 +1,9 @@
+use chrono::{DateTime, Local};
+use gilrs::{Button, Event, EventType, Gilrs};
 
-fn handle_controller() {
+use cyber_rc::constants;
+
+fn main() {
     // Initialize gilrs
     let mut gilrs = Gilrs::new().expect("Failed to initialize gilrs");
 
@@ -7,7 +11,10 @@ fn handle_controller() {
 
     // Event loop
     loop {
-        while let Some(Event { id, event, time }) = gilrs.next_event() {
+        while let Some(Event {
+            id, event, time, ..
+        }) = gilrs.next_event()
+        {
             let datetime: DateTime<Local> = time.into();
             println!("Gamepad {} at time {}: {:?}", id, datetime, event);
 

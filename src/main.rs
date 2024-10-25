@@ -1,7 +1,6 @@
 use chrono::{DateTime, Local};
 use gilrs::{Button, Event, EventType, Gilrs};
 
-mod constants;
-
+include!(concat!(env!("OUT_DIR"), "/cyberrc.rs"));
 
 fn main() {}
