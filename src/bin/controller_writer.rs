@@ -1,8 +1,8 @@
-use std::{io, rc, time::Duration};
-use std::io::Cursor;
-use clap::{Parser};
+use clap::Parser;
 use prost::Message;
-use serialport::{available_ports, SerialPortType, SerialPort, SerialPortBuilder};
+use serialport::{available_ports, SerialPort, SerialPortBuilder, SerialPortType};
+use std::io::Cursor;
+use std::{io, rc, time::Duration};
 
 pub mod cyberrc {
     include!(concat!(env!("OUT_DIR"), "/cyberrc.rs"));
@@ -24,11 +24,10 @@ pub enum Controls {
     Aileron,
     Elevator,
     Throttle,
-    Rudder
+    Rudder,
 }
 
 pub fn main() {
-
     println!("CyberRC Controller Writer");
     let args = Args::parse();
     let mut port = match args.port {
@@ -46,7 +45,7 @@ pub fn main() {
                     .expect("Failed to read input");
                 let value: usize = choice.trim().parse().expect("Please type a number");
                 let port_name = ports[value].port_name.clone();
-                break serialport::new(port_name, args.baud_rate)
+                break serialport::new(port_name, args.baud_rate);
             }
         }
     }
@@ -56,7 +55,8 @@ pub fn main() {
         std::process::exit(1);
     });
 
-    port.set_timeout(Duration::from_secs(1)).expect("Failed to set timeout");
+    port.set_timeout(Duration::from_secs(1))
+        .expect("Failed to set timeout");
 
     loop {
         // Display options and parse user input
@@ -75,19 +75,18 @@ pub fn main() {
             Err(e) => {
                 eprintln!("Failed to read input: {}", e);
                 continue;
-            },
+            }
         };
         match choice.trim().parse::<u32>() {
-            Ok(choice) if choice > 0 && choice < 6 =>{
-            },
-            Ok(_) => { 
+            Ok(choice) if choice > 0 && choice < 6 => {}
+            Ok(_) => {
                 eprintln!("Invalid choice. Please select a number from 1-5.");
                 continue;
-            },
+            }
             Err(e) => {
                 eprintln!("Failed to read input: {}", e);
                 continue;
-            },
+            }
         };
 
         println!("Enter a value between -1 and 1:");
@@ -97,14 +96,14 @@ pub fn main() {
             Err(e) => {
                 eprintln!("Failed to read input: {}", e);
                 continue;
-            },
+            }
         };
-        let value: f32 = match value.trim().parse::<f64>() {
-            Ok(v) => v as f32,
+        let value: i32 = match value.trim().parse::<i32>() {
+            Ok(v) => v as i32,
             Err(_) => {
                 eprintln!("Invalid value. Expecting a value between -1 and 1.");
                 continue;
-            }, 
+            }
         };
 
         // Match the user input to a control
@@ -116,28 +115,40 @@ pub fn main() {
             "5" => {
                 println!("Exiting...");
                 break;
-            },
+            }
             _ => {
                 eprintln!("Invalid choice. Please select a number from 1-5.");
                 continue;
-            },
+            }
         };
         // todo: handle error
     }
 }
 
-pub fn write_controller(writer: &mut dyn SerialPort, channel: Controls, value: f32) -> Result<(), anyhow::Error> {
-
+pub fn write_controller(
+    writer: &mut dyn SerialPort,
+    channel: Controls,
+    value: i32,
+) -> Result<(), anyhow::Error> {
     let mut rc_data = RcData::default();
     match channel {
-        Controls::Aileron => {rc_data.aileron = value;},
-        Controls::Elevator => {rc_data.elevator = value;},
-        Controls::Throttle => {rc_data.throttle = value;},
-        Controls::Rudder => {rc_data.rudder = value;},
+        Controls::Aileron => {
+            rc_data.aileron = value;
+        }
+        Controls::Elevator => {
+            rc_data.elevator = value;
+        }
+        Controls::Throttle => {
+            rc_data.throttle = value;
+        }
+        Controls::Rudder => {
+            rc_data.rudder = value;
+        }
     };
 
-    let mut buf= Vec::new();
+    let mut buf = Vec::new();
     rc_data.encode(&mut buf)?;
     writer.write_all(&buf).expect("Failed to write rc_data");
     Ok(())
 }
+
