@@ -8,7 +8,7 @@
 pb_ostream_s pb_ostream_from_udp(Print& p);
 pb_istream_s pb_istream_from_udp(Stream& s, size_t msglen);
 
-bool decode_channel_values(pb_istream_t *stream, const pb_field_iter_t *field, void **arg);
+bool decode_channel_values_udp(pb_istream_t *stream, const pb_field_iter_t *field, void **arg);
 
 #endif
 
