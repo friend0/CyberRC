@@ -3,8 +3,9 @@
 #include <XInput.h>
 
 #include "RCData.pb.h"
-#include <SoftwareSerial.h>
+// #include <SoftwareSerial.h>
 // #include <nanopbUdp.h>
+
 #include <nanopbSerial.h>
 #include <pb.h>
 #include "usb_desc.h"
@@ -19,7 +20,7 @@ char uartBuffer[UART_BUFFER_SIZE]; // Buffer to store incoming string
 const int ledPin = 13;
 unsigned long now, previous;
 
-SoftwareSerial debug(0, 1);
+// SoftwareSerial debug(0, 1);
 bool proto_decode_status;
 
 cyberrc_RCData rc_message = cyberrc_RCData_init_zero;
@@ -60,7 +61,7 @@ void setup() {
   // Safety Pin Setup
   pinMode(SafetyPin, INPUT_PULLUP);
   // Debug Serial Setup
-  debug.begin(115200);
+  Serial1.begin(115200);
   // xInput Setup
   XInput.setAutoSend(false);
   XInput.begin();
@@ -86,14 +87,14 @@ void setup() {
 
 void loop() {
   #ifdef SERIAL_MODE
-  if (debug.available()) { 
+  if (Serial1.available()) { 
       proto_decode_status = false;
       pb_istream_s pb_in;
-      pb_in = pb_istream_from_serial(debug, cyberrc_RCData_size);
+      pb_in = pb_istream_from_serial(Serial1, cyberrc_RCData_size);
       proto_decode_status =
           pb_decode(&pb_in, cyberrc_RCData_fields, &rc_message); 
       if (proto_decode_status) {
-        if (debug.availableForWrite()) {
+        if (Serial1.availableForWrite()) {
           // Process XInput Output
           int l_axis_x = CLAMP(rc_message.Throttle, -32768, 32767);
           int l_axis_y = CLAMP(rc_message.Rudder, -32768, 32767);
@@ -103,20 +104,18 @@ void loop() {
           XInput.setJoystick(JOY_LEFT, l_axis_x, l_axis_y);   // Clockwise
           XInput.setJoystick(JOY_RIGHT, r_axis_x, r_axis_y); // Counter-clockwise
       } else {
-            debug.printf("Decode failed: %d\n", proto_decode_status);
+            Serial1.printf("Decode failed: %d\n", proto_decode_status);
             // TODO: send the last output up to the limit
       }
     }
   }
   else {
-    debug.write("No data");
-    XInput.setJoystick(JOY_LEFT, 0, 0);   // Clockwise
-    XInput.setJoystick(JOY_RIGHT, 0, 0); // Counter-clockwise
+    Serial1.write("No data");
+    XInput.setJoystick(JOY_LEFT, 0, 0);
+    XInput.setJoystick(JOY_RIGHT, 0, 0);
     delay(5000); 
   }
-  bool proto_decode_status;
-
-  #endif SERIAL_MODE
+  #endif
 
   #ifndef SERIAL_MODE
   int packetSize = Udp.parsePacket();
@@ -131,7 +130,7 @@ void loop() {
     pb_in = pb_istream_from_udp(proto, 36);
     proto_decode_status = pb_decode(&pb_in, cyberrc_RCData_fields, &rc_message);
     if (!proto_decode_status) {
-      debug.write("Decoding failed");
+      Serial1.write("Decoding failed");
       blink_loop(ledPin, 250);
     }
   }
