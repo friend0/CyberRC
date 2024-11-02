@@ -14,6 +14,7 @@ CyberRC has been developed on the Teensy 4.1, but should be portable to the 4.0,
 # Dependencies and Development
 
 ## Dependencies
+- Arduino IDE
 - Teensy Loader: communicates with the bootloader to flash programs. Follow the instructions [here](https://www.pjrc.com/teensy/loader.html). It comes in a CLI version, or can be installed with the Teensy board files using the araduino IDE.
 - Xinput: controller emulation
 - Nanopb: small ansi C protobuf implementation
