@@ -1,4 +1,4 @@
-#include "nanopbUdp.h"
+#include "nanopbSerial.h"
 #include <Stream.h>
 
 static bool pb_print_write(pb_ostream_t *stream, const pb_byte_t *buf, size_t count)
@@ -20,21 +20,32 @@ static bool pb_stream_read(pb_istream_t *stream, pb_byte_t *buf, size_t count)
     return read == count;
 };
 
-pb_istream_s pb_istream_from_serial(Stream &s, size_t msglen)
-{
-    s.setTimeout(0);
-#ifndef PB_NO_ERRMSG
-    return {pb_stream_read, &s, msglen, 0};
-#else
-    for (int i = 0; i < (int)sizeof(ppm_message); i++)
-    {
-        Serial.read();
+// Custom callback to read bytes from an Arduino Serial object
+bool read_from_serial(pb_istream_t *stream, uint8_t *buf, size_t count) {
+    HardwareSerial *serial = (HardwareSerial *)stream->state;
+    
+    // Wait until enough bytes are available or timeout
+    unsigned long startTime = millis();
+    while ((size_t)serial->available() < sizeof(count)) {
+        if (millis() - startTime > 1000) { // 1-second timeout, adjust as needed
+            return false;
+        }
     }
-    return {pb_stream_read, &s, msglen};
-#endif
-};
+    
+    // Read the required number of bytes
+    serial->readBytes(buf, count);
+    return true;
+}
 
-
+// Function to create a Nanopb input stream from a Serial object
+pb_istream_t pb_istream_from_serial(Stream &serial, size_t msglen) {
+    return pb_istream_t {
+        .callback = &read_from_serial,
+        .state = &serial,
+        .bytes_left = msglen,
+        .errmsg = NULL
+    };
+}
 
 bool decode_channel_values(pb_istream_t *stream, const pb_field_iter_t *field, void **arg)
 {
