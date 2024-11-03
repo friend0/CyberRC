@@ -1,9 +1,14 @@
 use clap::Parser;
+use prost::bytes::{buf, Buf};
 use prost::Message;
+use rerun::external::arrow2::io::ipc::read;
+use rerun::external::arrow2::io::print;
 use serialport::{available_ports, SerialPort, SerialPortBuilder, SerialPortType};
 use std::io::Cursor;
-use std::{io, rc, time::Duration};
-
+use std::thread;
+use std::io::{self, BufRead, BufReader, Write};
+use std::{rc, time::Duration};
+use tokio::time::sleep;
 pub mod cyberrc {
     include!(concat!(env!("OUT_DIR"), "/cyberrc.rs"));
 }
@@ -15,7 +20,7 @@ use cyberrc::RcData;
 pub struct Args {
     #[arg(short, long)]
     pub port: Option<String>,
-    #[arg(short, long, default_value = "115200")]
+    #[arg(short, long, default_value = "921600")]
     pub baud_rate: u32,
 }
 
@@ -27,7 +32,8 @@ pub enum Controls {
     Rudder,
 }
 
-pub fn main() {
+#[tokio::main]
+async fn main() {
     println!("CyberRC Controller Writer");
     let args = Args::parse();
     let mut port = match args.port {
@@ -55,9 +61,14 @@ pub fn main() {
         std::process::exit(1);
     });
 
-    port.set_timeout(Duration::from_secs(1))
+    port.flush().expect("Failed to flush port");
+    port.set_timeout(Duration::from_millis(1))
         .expect("Failed to set timeout");
 
+    let mut read_port = port.try_clone().expect("Failed to clone port");
+    tokio::spawn(async move {
+        read_feedback(&mut *read_port).await;
+    });
     loop {
         // Display options and parse user input
         println!("\nSelect an aircraft control to modify:");
@@ -107,7 +118,7 @@ pub fn main() {
         };
 
         // Match the user input to a control
-        let _ = match choice.trim() {
+        let write_result = match choice.trim() {
             "1" => write_controller(&mut *port, Controls::Aileron, value),
             "2" => write_controller(&mut *port, Controls::Elevator, value),
             "3" => write_controller(&mut *port, Controls::Throttle, value),
@@ -121,7 +132,45 @@ pub fn main() {
                 continue;
             }
         };
+
+        match write_result {
+            Ok(_) => {
+                println!("Successfully wrote to port");
+            },
+            Err(e) => {
+                eprintln!("Failed to write to port: {}", e);
+                continue;
+            }
+        };
         // todo: handle error
+    }
+}
+
+async fn read_feedback(port: &mut dyn SerialPort) {
+    let mut buffer = vec![0; 1024];
+    port.set_timeout(Duration::from_millis(1))
+        .expect("Failed to set timeout");
+    loop {
+        match port.read(buffer.as_mut_slice()) {
+            Ok(bytes_read) => {
+                io::stdout()
+                    .write_all(&buffer[..bytes_read])
+                    .expect("Failed to write to stdout");
+                // io::stdout().flush().expect("Failed to flush stdout");
+            }
+            Err(ref e) if e.kind() == io::ErrorKind::TimedOut => {
+                // Handle timeout if desired; currently, it continues to read
+                // eprintln!("Timeout reading from serial port");
+                // io::stdout().flush().expect("Failed to flush stdout");
+                continue;
+            }
+            Err(e) => {
+                // eprintln!("Error reading from serial port: {}", e);
+                // io::stdout().flush().expect("Failed to flush stdout");
+                continue;
+            }
+        }
+        tokio::time::sleep(Duration::from_millis(5)).await;
     }
 }
 
@@ -130,25 +179,34 @@ pub fn write_controller(
     channel: Controls,
     value: i32,
 ) -> Result<(), anyhow::Error> {
-    let mut rc_data = RcData::default();
+    let mut message = cyberrc::CyberRcMessage::default();
+    let mut controller_data = RcData::default();
     match channel {
         Controls::Aileron => {
-            rc_data.aileron = value;
+            controller_data.aileron = value;
         }
         Controls::Elevator => {
-            rc_data.elevator = value;
+            controller_data.elevator = value;
         }
         Controls::Throttle => {
-            rc_data.throttle = value;
+            controller_data.throttle = value;
         }
         Controls::Rudder => {
-            rc_data.rudder = value;
+            controller_data.rudder = value;
         }
     };
+    message.r#type = cyberrc::cyber_rc_message::MessageType::RcData as i32;
+    message.payload = controller_data.encode_to_vec();
+    println!("Type: {}", message.r#type);
+    println!("Payload: {:?}", message.payload);
 
-    let mut buf = Vec::new();
-    rc_data.encode(&mut buf)?;
-    writer.write_all(&buf).expect("Failed to write rc_data");
+    let buffer = message.encode_length_delimited_to_vec();
+    print!("Writing to port: ");
+    for byte in &buffer {
+        print!("{:02X} ", byte);
+    }
+    println!();
+    writer.write_all(&buffer)?;
     Ok(())
 }
 
