@@ -20,20 +20,42 @@ static bool pb_stream_read(pb_istream_t *stream, pb_byte_t *buf, size_t count)
     return read == count;
 };
 
+// Function to read data from the serial interface into a buffer
+size_t read_serial_to_buffer(uint8_t *buffer, size_t buffer_size) {
+    size_t bytesRead = 0;
+    unsigned long startTime = micros();
+
+    // Read bytes until the buffer is full or timeout occurs
+    while (bytesRead < buffer_size) {
+        if (Serial1.available()) {
+            buffer[bytesRead++] = Serial1.read();
+        } else if (micros() - startTime > 750) {
+            // Stop reading if timeout is reached
+            break;
+        } else {
+            delayMicroseconds(10);  // Small delay to wait for incoming data
+        }
+    }
+
+    return bytesRead;
+}
+
 // Custom callback to read bytes from an Arduino Serial object
 bool read_from_serial(pb_istream_t *stream, uint8_t *buf, size_t count) {
     HardwareSerial *serial = (HardwareSerial *)stream->state;
-    
     // Wait until enough bytes are available or timeout
     unsigned long startTime = micros();
     while ((size_t)serial->available() < count) {
-        if (micros() - startTime > 100) { // 100 microsecond timeout, adjust as needed
+        if (micros() - startTime > 750) { // 100 microsecond timeout, adjust as needed
             return false;
         }
     }
     
     // Read the required number of bytes
     serial->readBytes(buf, count);
+    for (int i = 0; i < count; i++) {
+        Serial1.printf("%02X ", buf[i]);
+    }
     return true;
 }
 
@@ -45,19 +67,4 @@ pb_istream_t pb_istream_from_serial(Stream &serial, size_t msglen) {
         .bytes_left = msglen,
         .errmsg = NULL
     };
-}
-
-bool decode_channel_values(pb_istream_t *stream, const pb_field_iter_t *field, void **arg)
-{
-    int i = 0;
-    uint32_t value;
-    u_int32_t* values = static_cast<u_int32_t*>(*arg);
-    while (stream->bytes_left)
-    {
-        if (!pb_decode_varint32(stream, &value))
-            return false;
-        values[i] = value;
-        i++;
-    }
-    return true;
 }
