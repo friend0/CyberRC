@@ -25,9 +25,9 @@ bool read_from_serial(pb_istream_t *stream, uint8_t *buf, size_t count) {
     HardwareSerial *serial = (HardwareSerial *)stream->state;
     
     // Wait until enough bytes are available or timeout
-    unsigned long startTime = millis();
-    while ((size_t)serial->available() < sizeof(count)) {
-        if (millis() - startTime > 1000) { // 1-second timeout, adjust as needed
+    unsigned long startTime = micros();
+    while ((size_t)serial->available() < count) {
+        if (micros() - startTime > 100) { // 100 microsecond timeout, adjust as needed
             return false;
         }
     }

@@ -10,35 +10,40 @@
 #include <pb.h>
 #include "usb_desc.h"
 
-#define UART_BUFFER_SIZE 24 * 5
-#define PI 3.14159265358979323846
 #define SERIAL_MODE
+#define DEBUG
 
 // Config
-const int SafetyPin = 34;          // Ground this pin to prevent inputs
-char uartBuffer[UART_BUFFER_SIZE]; // Buffer to store incoming string
-const int ledPin = 13;
 unsigned long now, previous;
+// TODO: not implemented. wire to a switch to enable/disable control output
+const int SafetyPin = 34;
+const int ledPin = 13;
+bool buttonState = false;
 
-// SoftwareSerial debug(0, 1);
-bool proto_decode_status;
-
+cyberrc_CyberRCMessage_MessageType message_type = cyberrc_CyberRCMessage_MessageType_RCData;
 cyberrc_RCData rc_message = cyberrc_RCData_init_zero;
 cyberrc_RCData last_rc_message = cyberrc_RCData_init_zero;
-// Enter a MAC address for your controller below.
-// Newer Ethernet shields have a MAC address printed on a sticker on the shield
-byte mac[] = {0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x02};
 
 // Config Settings
 const unsigned long CycleTime = 5000; // ms
-char packetBuffer[UDP_TX_PACKET_MAX_SIZE];
 
+bool proto_decode_status;
+#ifdef SERIAL_MODE
+uint8_t serial_read_buffer[32768];
+uint8_t serial_write_buffer[4096];
+pb_istream_t stream;
+#else
 // Ethernet Setup
 EthernetUDP Udp;
 IPAddress ip;
 unsigned int localPort = 6969;
-
 Stream &proto = Udp;
+char packetBuffer[UDP_TX_PACKET_MAX_SIZE];
+// Enter a MAC address for your controller below.
+// Newer Ethernet shields have a MAC address printed on a sticker on the shield
+byte mac[] = {0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x02};
+#endif
+
 
 // Joystick Setup
 const int JoyMin = -1500;
@@ -59,9 +64,11 @@ void blink_loop(int pin, int delay_ms) {
 
 void setup() {
   // Safety Pin Setup
-  pinMode(SafetyPin, INPUT_PULLUP);
-  // Debug Serial Setup
-  Serial1.begin(115200);
+  // pinMode(SafetyPin, INPUT_PULLUP);
+  Serial1.begin(921600);
+  Serial1.addMemoryForRead(&serial_read_buffer, sizeof(serial_read_buffer));
+  Serial1.addMemoryForWrite(&serial_write_buffer, sizeof(serial_write_buffer));
+
   // xInput Setup
   XInput.setAutoSend(false);
   XInput.begin();
@@ -87,33 +94,36 @@ void setup() {
 
 void loop() {
   #ifdef SERIAL_MODE
-  if (Serial1.available()) { 
-      proto_decode_status = false;
-      pb_istream_s pb_in;
-      pb_in = pb_istream_from_serial(Serial1, cyberrc_RCData_size);
-      proto_decode_status =
-          pb_decode(&pb_in, cyberrc_RCData_fields, &rc_message); 
-      if (proto_decode_status) {
-        if (Serial1.availableForWrite()) {
-          // Process XInput Output
-          int l_axis_x = CLAMP(rc_message.Throttle, -32768, 32767);
-          int l_axis_y = CLAMP(rc_message.Rudder, -32768, 32767);
-          int r_axis_x = CLAMP(rc_message.Aileron, -32768, 32767);
-          int r_axis_y = CLAMP(rc_message.Elevator, -32768, 32767);
+  if (Serial1.available() > 0) { 
+    int len = Serial1.read();
+    stream = pb_istream_from_serial(Serial1, len); 
+    rc_message = cyberrc_RCData_init_zero;
+    proto_decode_status =
+        pb_decode(&stream, cyberrc_RCData_fields, &rc_message); 
+    #ifdef DEBUG
+      Serial1.printf("Decode status %d\n", proto_decode_status);
+    #endif
+    if (proto_decode_status) {
+      // Process XInput Output
+      int l_axis_x = CLAMP(rc_message.Rudder, -32768, 32767);
+      int l_axis_y = CLAMP(rc_message.Throttle, -32768, 32767);
+      int r_axis_x = CLAMP(rc_message.Aileron, -32768, 32767);
+      int r_axis_y = CLAMP(rc_message.Elevator, -32768, 32767);
 
-          XInput.setJoystick(JOY_LEFT, l_axis_x, l_axis_y);   // Clockwise
-          XInput.setJoystick(JOY_RIGHT, r_axis_x, r_axis_y); // Counter-clockwise
-      } else {
-            Serial1.printf("Decode failed: %d\n", proto_decode_status);
-            // TODO: send the last output up to the limit
-      }
+      XInput.setJoystick(JOY_LEFT, l_axis_x, l_axis_y);
+      XInput.setJoystick(JOY_RIGHT, r_axis_x, r_axis_y);
+      XInput.send();
+      #ifdef DEBUG
+        XInput.printDebug(Serial1);
+      #endif
     }
   }
   else {
-    Serial1.write("No data");
-    XInput.setJoystick(JOY_LEFT, 0, 0);
-    XInput.setJoystick(JOY_RIGHT, 0, 0);
-    delay(5000); 
+    buttonState = !buttonState;
+    digitalWrite(13, buttonState);
+    // XInput.send();
+    // XInput.printDebug(Serial1);
+    // delay(1000); 
   }
   #endif
 
@@ -135,15 +145,4 @@ void loop() {
     }
   }
   #endif
-    // Calculate joystick x/y values using trig
 }
-
-// void loop() {
-
-//   if (digitalRead(SafetyPin) == LOW) {
-//     return;
-//   }
-//   unsigned long t = millis(); // Get timestamp for comparison
-//   // Send values to PC
-//   XInput.send();
-// }
