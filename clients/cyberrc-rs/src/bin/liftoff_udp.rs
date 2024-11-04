@@ -1,12 +1,9 @@
-use rerun::Position3D;
-use rerun::external::re_log;
-use rerun::RecordingStreamBuilder;
+use binrw::{binrw, BinRead};
+use rand;
+use std::net::UdpSocket;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use std::net::UdpSocket;
-use binrw::{binrw, BinRead};
 use tokio::time::{sleep, Duration};
-use rand;
 
 // TODO: configure packet based on the content of the Liftoff config file
 #[binrw]
@@ -31,7 +28,7 @@ async fn main() {
     tokio::spawn(async move {
         let _ = feedback_loop(ADDRESS, shared_data_clone).await;
     });
-    
+
     loop {
         let mut data_lock = shared_data.lock().await;
         while let Some(sample) = data_lock.take() {
@@ -44,13 +41,16 @@ async fn main() {
 
 async fn rerun_plot(data_lock: Arc<Mutex<Option<LiftoffPacket>>>) -> anyhow::Result<()> {
     re_log::setup_logging();
-    let session = RecordingStreamBuilder::new("liftoff tracking").connect().unwrap();
+    let session = RecordingStreamBuilder::new("liftoff tracking")
+        .connect()
+        .unwrap();
     loop {
         let mut data_lock = data_lock.lock().await;
         while let Some(sample) = data_lock.take() {
             println!("{:?}", sample);
             // Liftoff position plotting - sample data is left handed ENU, with Z north, X east, Y up
-            let position = rerun::Position3D::new(sample.position[2], sample.position[0], sample.position[1]);
+            let position =
+                rerun::Position3D::new(sample.position[2], sample.position[0], sample.position[1]);
             session.log("liftoff tracking", &rerun::Points3D::new(vec![position]))?;
         }
 
@@ -58,7 +58,10 @@ async fn rerun_plot(data_lock: Arc<Mutex<Option<LiftoffPacket>>>) -> anyhow::Res
         sleep(Duration::from_secs(1)).await;
     }
 }
-async fn feedback_loop(address: &str, data_lock: Arc<Mutex<Option<LiftoffPacket>>>) -> anyhow::Result<()> {
+async fn feedback_loop(
+    address: &str,
+    data_lock: Arc<Mutex<Option<LiftoffPacket>>>,
+) -> anyhow::Result<()> {
     let mut buf = [0; 256];
     let mut current_wait = Duration::from_secs(0);
     let mut delay = Duration::from_secs(2);
@@ -77,7 +80,8 @@ async fn feedback_loop(address: &str, data_lock: Arc<Mutex<Option<LiftoffPacket>
                         Ok((len, _)) => {
                             let mut cursor = std::io::Cursor::new(&buf[..len]);
                             // TODO: more robust handling of packet parsing errors during resets
-                            let sample = LiftoffPacket::read_be(&mut cursor).expect("Failed to read LiftoffPacket");
+                            let sample = LiftoffPacket::read_be(&mut cursor)
+                                .expect("Failed to read LiftoffPacket");
                             let mut data_lock = data_lock.lock().await;
                             *data_lock = Some(sample);
                         }
@@ -88,13 +92,19 @@ async fn feedback_loop(address: &str, data_lock: Arc<Mutex<Option<LiftoffPacket>
                                 return Err(anyhow::anyhow!("Bind loop exceeded max wait time"));
                             }
                             current_wait += delay;
-                            sleep(delay + Duration::from_millis((rand::random::<f64>() * 1000.0) as u64)).await;
-                            delay = (delay*2).min(max_delay);
+                            sleep(
+                                delay
+                                    + Duration::from_millis(
+                                        (rand::random::<f64>() * 1000.0) as u64,
+                                    ),
+                            )
+                            .await;
+                            delay = (delay * 2).min(max_delay);
                             // break;
-                        } 
+                        }
                     }
                 }
-            },
+            }
             Err(e) => {
                 return Err(anyhow::anyhow!("Bind loop exceeded max wait time"));
             }
@@ -102,3 +112,4 @@ async fn feedback_loop(address: &str, data_lock: Arc<Mutex<Option<LiftoffPacket>
     }
     Ok(())
 }
+
