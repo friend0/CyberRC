@@ -2,3 +2,7 @@
 TeensyCyberRC/.vscode
 
 TeensyCyberRC/.vs/
+
+clients/cyberrc-rs/target/
+
+firmware/.vs/
