@@ -20,7 +20,6 @@ serialport = "4.5.1"
 binrw = "0.14.0"
 glam = "0.29.0"
 rand = "0.8.5"
-rerun = "0.18.2"
 tokio = { version = "1.11.0", features = ["full"] }
 mockall = "0.13.0"
 
