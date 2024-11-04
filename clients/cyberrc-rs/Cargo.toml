@@ -4,6 +4,11 @@ version = "0.1.0"
 edition = "2021"
 build = "build.rs"
 
+[lib]
+name = "cyber_rc"
+path = "src/lib.rs"
+build = "build.rs"
+
 [dependencies]
 anyhow = "1.0.89"
 chrono = "0.4.38"
@@ -17,6 +22,7 @@ glam = "0.29.0"
 rand = "0.8.5"
 rerun = "0.18.2"
 tokio = { version = "1.11.0", features = ["full"] }
+mockall = "0.13.0"
 
 [build-dependencies]
 prost-build = "0.13.3"
