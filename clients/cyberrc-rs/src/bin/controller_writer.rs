@@ -1,8 +1,6 @@
 use clap::Parser;
 use prost::bytes::{buf, Buf};
 use prost::Message;
-use rerun::external::arrow2::io::ipc::read;
-use rerun::external::arrow2::io::print;
 use serialport::{available_ports, SerialPort, SerialPortBuilder, SerialPortType};
 use std::io::Cursor;
 use std::io::{self, BufRead, BufReader, Write};
