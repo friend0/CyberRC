@@ -1,14 +1,13 @@
 use clap::Parser;
 use prost::bytes::{buf, Buf};
 use prost::Message;
-use rerun::external::arrow2::io::ipc::read;
-use rerun::external::arrow2::io::print;
 use serialport::{available_ports, SerialPort, SerialPortBuilder, SerialPortType};
 use std::io::Cursor;
-use std::thread;
 use std::io::{self, BufRead, BufReader, Write};
+use std::thread;
 use std::{rc, time::Duration};
 use tokio::time::sleep;
+
 pub mod cyberrc {
     include!(concat!(env!("OUT_DIR"), "/cyberrc.rs"));
 }
@@ -136,7 +135,7 @@ async fn main() {
         match write_result {
             Ok(_) => {
                 println!("Successfully wrote to port");
-            },
+            }
             Err(e) => {
                 eprintln!("Failed to write to port: {}", e);
                 continue;
@@ -209,4 +208,3 @@ pub fn write_controller(
     writer.write_all(&buffer)?;
     Ok(())
 }
-
