@@ -6,3 +6,4 @@ TeensyCyberRC/.vs/
 clients/cyberrc-rs/target/
 
 firmware/.vs/
+clients/cyberrc-rs/.cargo
