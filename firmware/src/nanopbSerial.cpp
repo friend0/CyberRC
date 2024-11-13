@@ -68,3 +68,19 @@ pb_istream_t pb_istream_from_serial(Stream &serial, size_t msglen) {
         .errmsg = NULL
     };
 }
+
+bool decode_channel_values(pb_istream_t *stream, const pb_field_iter_t *field, void **arg)
+{
+    int i = 0;
+    uint32_t value;
+    u_int32_t* values = static_cast<u_int32_t*>(*arg);
+    while (stream->bytes_left)
+    {
+        if (!pb_decode_varint32(stream, &value))
+            return false;
+        Serial1.printf("Decoding: %ld\r\n", value);
+        values[i] = value;
+        i++;
+    }
+    return true;
+}

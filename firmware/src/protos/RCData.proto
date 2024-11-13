@@ -24,7 +24,9 @@ message RCData {
     int32 Mode = 6;
 }
 
+// Message definition for PPM update
 message PPMUpdateAll {
     int32 line = 1;
-    repeated int32 channel_values = 2[packed=true];
+    int32 channels = 2;
+    repeated int32 channel_values = 3;
 }

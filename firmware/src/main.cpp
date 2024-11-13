@@ -20,9 +20,14 @@ const int SafetyPin = 34;
 const int ledPin = 13;
 bool buttonState = false;
 
+// RC
 cyberrc_CyberRCMessage message = cyberrc_CyberRCMessage_init_zero;
 cyberrc_RCData controller_data = cyberrc_RCData_init_zero;
 cyberrc_RCData last_controller_data = cyberrc_RCData_init_zero;
+// PPM
+cyberrc_UpdateAll ppm_message = cybertx_UpdateAll_init_zero;
+ppm_message.channel_values.funcs.decode = decode_channel_values;
+ppm_message.channel_values.arg = &channel_values;
 
 // Config Settings
 const unsigned long CycleTime = 5000; // ms
