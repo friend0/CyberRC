@@ -26,7 +26,7 @@
       RUST_BACKTRACE = "1"; # Enable backtrace for debugging
 
       # Optional shellHook to fetch dependencies when entering the shell
-x      shellHook = ''
+      shellHook = ''
         export GIT_CONFIG=$PWD/.gitconfig
         export CARGO_NET_GIT_FETCH_WITH_CLI=true
         export GIT_SSH_COMMAND="ssh -F ~/.ssh/config"  # Ensure it uses your SSH config
