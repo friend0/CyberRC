@@ -25,6 +25,10 @@ pub struct Writer {
 
 impl Writer {
     pub fn new(port: String, baud_rate: u32) -> Result<Self, anyhow::Error> {
+        println!(
+            "CyberRC Writer: Opening port {} at baud rate {}",
+            port, baud_rate
+        );
         let mut port = serialport::new(port, baud_rate)
             .open()
             .map_err(|e| anyhow::anyhow!(e))?;
@@ -35,7 +39,8 @@ impl Writer {
         })
     }
 
-    pub fn write(&mut self, message: cyberrc::RcData) -> Result<(), anyhow::Error> {
+    pub fn write(&mut self, message: &mut cyberrc::RcData) -> Result<(), anyhow::Error> {
+        message.arm = 1;
         let buffer = message.encode_length_delimited_to_vec();
         self.serial_port
             .write_all(&buffer)
@@ -218,8 +223,8 @@ mod tests {
             serial_port: Box::new(port),
             baud_rate: 9600,
         };
-        let message = super::cyberrc::RcData::default();
-        let res = writer.write(message);
+        let mut message = super::cyberrc::RcData::default();
+        let res = writer.write(&mut message);
         assert!(res.is_ok());
     }
 }
