@@ -49,7 +49,7 @@ impl Writer {
         message.r#type = cyberrc::cyber_rc_message::MessageType::RcData as i32;
         data.arm = 32767;
         message.payload = data.encode_to_vec();
-        let buffer = message.encode_to_vec();
+        let buffer = message.encode_length_delimited_to_vec();
         self.serial_port
             .write_all(&buffer)
             .map_err(|e| anyhow::anyhow!(e))
