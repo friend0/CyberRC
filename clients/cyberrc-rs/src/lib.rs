@@ -1,4 +1,5 @@
 use prost::Message;
+use rerun::external::arrow2::io::ipc::read;
 use serialport::{SerialPort, SerialPortBuilder, SerialPortType};
 use std::io::Write;
 use std::time::Duration;
@@ -33,6 +34,10 @@ impl Writer {
             .open()
             .map_err(|e| anyhow::anyhow!(e))?;
         port.set_timeout(Duration::from_secs(1))?;
+        let mut read_port = port.try_clone().expect("Failed to clone port");
+        tokio::spawn(async move {
+            read_feedback(&mut *read_port).await;
+        });
         Ok(Self {
             serial_port: port,
             baud_rate,
@@ -45,6 +50,34 @@ impl Writer {
         self.serial_port
             .write_all(&buffer)
             .map_err(|e| anyhow::anyhow!(e))
+    }
+}
+
+async fn read_feedback(port: &mut dyn SerialPort) {
+    let mut buffer = vec![0; 1024];
+    port.set_timeout(Duration::from_millis(1))
+        .expect("Failed to set timeout");
+    loop {
+        match port.read(buffer.as_mut_slice()) {
+            Ok(bytes_read) => {
+                std::io::stdout()
+                    .write_all(&buffer[..bytes_read])
+                    .expect("Failed to write to stdout");
+                // io::stdout().flush().expect("Failed to flush stdout");
+            }
+            Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => {
+                // Handle timeout if desired; currently, it continues to read
+                // eprintln!("Timeout reading from serial port");
+                // io::stdout().flush().expect("Failed to flush stdout");
+                continue;
+            }
+            Err(e) => {
+                // eprintln!("Error reading from serial port: {}", e);
+                // io::stdout().flush().expect("Failed to flush stdout");
+                continue;
+            }
+        }
+        tokio::time::sleep(Duration::from_millis(5)).await;
     }
 }
 
