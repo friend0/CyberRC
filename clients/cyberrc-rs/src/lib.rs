@@ -26,18 +26,11 @@ pub struct Writer {
 
 impl Writer {
     pub fn new(port: String, baud_rate: u32) -> Result<Self, anyhow::Error> {
-        println!(
-            "CyberRC Writer: Opening port {} at baud rate {}",
-            port, baud_rate
-        );
         let mut port = serialport::new(port, baud_rate)
             .open()
             .map_err(|e| anyhow::anyhow!(e))?;
         port.set_timeout(Duration::from_secs(1))?;
         let mut read_port = port.try_clone().expect("Failed to clone port");
-        tokio::spawn(async move {
-            read_feedback(&mut *read_port).await;
-        });
         Ok(Self {
             serial_port: port,
             baud_rate,
