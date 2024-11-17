@@ -30,7 +30,6 @@ impl Writer {
             .open()
             .map_err(|e| anyhow::anyhow!(e))?;
         port.set_timeout(Duration::from_secs(1))?;
-        let mut read_port = port.try_clone().expect("Failed to clone port");
         Ok(Self {
             serial_port: port,
             baud_rate,
@@ -46,74 +45,6 @@ impl Writer {
         self.serial_port
             .write_all(&buffer)
             .map_err(|e| anyhow::anyhow!(e))
-    }
-}
-
-// pub fn write_controller(
-//     writer: &mut dyn SerialPort,
-//     channel: Controls,
-//     value: i32,
-// ) -> Result<(), anyhow::Error> {
-//     let mut message = cyberrc::CyberRcMessage::default();
-//     let mut controller_data = RcData::default();
-//     match channel {
-//         Controls::Aileron => {
-//             controller_data.aileron = value;
-//         }
-//         Controls::Elevator => {
-//             controller_data.elevator = value;
-//         }
-//         Controls::Throttle => {
-//             controller_data.throttle = value;
-//         }
-//         Controls::Rudder => {
-//             controller_data.rudder = value;
-//         }
-//     };
-//     // Always send a non-zero arm value so that the payload always shows as decoded on the CyberRC
-//     // Difficult to tell the difference between a packet that fails to decode and a packet that
-//     // Just has no data.
-//     controller_data.arm = 32767;
-//     message.r#type = cyberrc::cyber_rc_message::MessageType::RcData as i32;
-//     message.payload = controller_data.encode_to_vec();
-//     println!("Type: {}", message.r#type);
-//     println!("Payload: {:?}", message.payload);
-//
-//     let buffer = message.encode_length_delimited_to_vec();
-//     print!("Writing to port: ");
-//     for byte in &buffer {
-//         print!("{:02X} ", byte);
-//     }
-//     println!();
-//     writer.write_all(&buffer)?;
-//     Ok(())
-// }
-
-async fn read_feedback(port: &mut dyn SerialPort) {
-    let mut buffer = vec![0; 1024];
-    port.set_timeout(Duration::from_millis(1))
-        .expect("Failed to set timeout");
-    loop {
-        match port.read(buffer.as_mut_slice()) {
-            Ok(bytes_read) => {
-                std::io::stdout()
-                    .write_all(&buffer[..bytes_read])
-                    .expect("Failed to write to stdout");
-                // io::stdout().flush().expect("Failed to flush stdout");
-            }
-            Err(ref e) if e.kind() == std::io::ErrorKind::TimedOut => {
-                // Handle timeout if desired; currently, it continues to read
-                // eprintln!("Timeout reading from serial port");
-                // io::stdout().flush().expect("Failed to flush stdout");
-                continue;
-            }
-            Err(e) => {
-                // eprintln!("Error reading from serial port: {}", e);
-                // io::stdout().flush().expect("Failed to flush stdout");
-                continue;
-            }
-        }
-        tokio::time::sleep(Duration::from_millis(5)).await;
     }
 }
 
