@@ -80,10 +80,8 @@ In normal Arduino development, you select the desired mode of USB operation thro
 in `$HOME/.platformio/platforms/teensy/builder/frameworks/arduino.py` (Linux path).
 
 # Configuring the Teensy for Xinput and HW Serial
-By default, the Teensy doesn't come withe a usb descriptor that enables Xinput.
+By default, the Teensy doesn't come with a usb descriptor that enables Xinput.
 There are some common adaptations used to add an Xinput descriptor, but it does not enable additional hardware serial. Some manual interventions are required to make this work.
-
-
 
 # Rebuilding Protobufs
 Protobufs for the Teensy should be rebuilt automatically by PlatformIO.
