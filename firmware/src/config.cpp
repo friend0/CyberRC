@@ -17,14 +17,16 @@ void setup_ppm()
     for (int i=0; i<NUM_LINES; i++)
     {
       output_channels[i] = PulsePositionOutput(FALLING);
-      output_channels[i].begin(ppm_output_pins[i]);
-      for (int j=0; j<MAX_NUM_CHANNELS; j++)
-      {
-        output_channels[i].write(j, 1500);
-      }
+      // output_channels[i].begin(ppm_output_pins[i]);
+      // PulsePositionOutput(FALLING).begin(6);
+      // for (int j=0; j<MAX_NUM_CHANNELS; j++)
+      // {
+      //   output_channels[i].write(j, 1500);
+      // }
     }
     for (int i=0; i<MAX_NUM_CHANNELS; i++)
     {
       channel_values[i] = 1500;
     }
 }
+

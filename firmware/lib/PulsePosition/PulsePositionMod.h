@@ -32,7 +32,7 @@
 #ifdef __AVR__
 #error "Sorry, PulsePosition does not work on Teensy 2.0 and other AVR-based boards"
 #elif defined(__IMXRT1062__)
-#include "PulsePositionIMXRT.h"
+#include "PulsePositionIMXRTMod.h"
 #else 
 
 #define PULSEPOSITION_MAXCHANNELS 16
