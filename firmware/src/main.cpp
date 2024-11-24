@@ -1,15 +1,14 @@
-#include <Arduino.h>
-#include <XInput.h>
-#include <pb.h>
-
-// When operating in debug mode, you must ensure that the debugging code is
-// actively clearing from the buffer, as there is currently no check on this
-// end. #define DEBUG
 #include "RCData.pb.h"
 #include "XInput.h"
 #include "config.h"
 #include "nanopbSerial.h"
 #include "utils.h"
+#include <IntervalTimer.h>
+
+// When operating in debug mode, you must ensure that the debugging code is
+// actively clearing from the buffer, as there is currently no check on this
+// end.
+#define DEBUG
 
 unsigned long now, previous;
 const int ledPin = 13;
@@ -23,7 +22,7 @@ bool proto_decode_status;
 const int JoyMin = -1500;
 const int JoyMax = 1500;
 
-uint8_t buffer[cyberrc_RCData_size];
+uint8_t buffer[255];
 MessageWrapper message_wrapper;
 
 void toggleLED() {
@@ -44,9 +43,11 @@ void setup() {
   // xInput Setup
   XInput.setAutoSend(false);
   XInput.begin();
+  Serial1.println("Starting");
 }
 
 void loop() {
+  Serial1.println("Looping");
   while (!Serial1.available()) {
   }
 
@@ -155,3 +156,4 @@ void loop() {
       output_channel.write(i + 1, channel_values[i]);
     }
   }
+}

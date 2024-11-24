@@ -1,12 +1,8 @@
 use clap::Parser;
-use prost::bytes::{buf, Buf};
 use prost::Message;
-use serialport::{available_ports, SerialPort, SerialPortBuilder, SerialPortType};
-use std::io::Cursor;
-use std::io::{self, BufRead, BufReader, Write};
-use std::thread;
+use serialport::SerialPort;
+use std::io::{self, Write};
 use std::{rc, time::Duration};
-use tokio::time::sleep;
 
 pub mod cyberrc {
     include!(concat!(env!("OUT_DIR"), "/cyberrc.rs"));
