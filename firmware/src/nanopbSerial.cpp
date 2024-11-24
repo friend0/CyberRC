@@ -136,3 +136,4 @@ bool decode_inner_message_callback(pb_istream_t *stream, const pb_field_t *field
     return false;
   }
   return true;
+}
