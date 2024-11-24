@@ -2,15 +2,14 @@
 #include <XInput.h>
 #include <pb.h>
 
-#define SERIAL_MODE
-// When operating in debug mode, you must ensure that the debugging code is 
-// actively clearing from the buffer, as there is currently no check on this end.
-// #define DEBUG
+// When operating in debug mode, you must ensure that the debugging code is
+// actively clearing from the buffer, as there is currently no check on this
+// end. #define DEBUG
+#include "RCData.pb.h"
+#include "XInput.h"
 #include "config.h"
 #include "nanopbSerial.h"
-#include "RCData.pb.h"
 #include "utils.h"
-
 
 unsigned long now, previous;
 const int ledPin = 13;
@@ -28,20 +27,16 @@ uint8_t buffer[cyberrc_RCData_size];
 MessageWrapper message_wrapper;
 
 void toggleLED() {
-    ledState = !ledState;        // Toggle LED state
-    digitalWrite(ledPin, ledState); // Update the LED pin
+  ledState = !ledState;           // Toggle LED state
+  digitalWrite(ledPin, ledState); // Update the LED pin
 }
 
-void setup()
-{
+void setup() {
   setup_ppm();
   // Safety Pin Setup
   // pinMode(SafetyPin, INPUT_PULLUP);
-  pinMode(ledPin, OUTPUT);    // Configure LED pin as output
+  pinMode(ledPin, OUTPUT);          // Configure LED pin as output
   myTimer.begin(toggleLED, 500000); // Set up timer to toggle LED every 500ms
-  Serial1.begin(230400);
-  Serial1.addMemoryForRead(&serial_read_buffer, sizeof(serial_read_buffer));
-  Serial1.addMemoryForWrite(&serial_write_buffer, sizeof(serial_write_buffer));
   Serial1.begin(230400);
   Serial1.addMemoryForRead(&SERIAL_READ_BUFFER, sizeof(SERIAL_READ_BUFFER));
   Serial1.addMemoryForWrite(&SERIAL_WRITE_BUFFER, sizeof(SERIAL_WRITE_BUFFER));
@@ -51,10 +46,8 @@ void setup()
   XInput.begin();
 }
 
-void loop()
-{
-  while (!Serial1.available())
-  {
+void loop() {
+  while (!Serial1.available()) {
   }
 
   CLEAR_BUFFER(buffer);
@@ -67,19 +60,17 @@ void loop()
 #endif
   // With the given message size, read that number of bytes into the buffer.
   size_t bytesRead = read_serial_to_buffer(buffer, message_size);
-  if (bytesRead != message_size)
-  {
+  if (bytesRead != message_size) {
     // Error reading the message
 #ifdef DEBUG
-  Serial1.printf("Did not read full message %d\n", bytesRead);
+    Serial1.printf("Did not read full message %d\n", bytesRead);
 #endif
     return;
   }
 
 #ifdef DEBUG
   Serial1.printf("Buffer\n");
-  for (int i = 0; i < bytesRead; i++)
-  {
+  for (int i = 0; i < bytesRead; i++) {
     Serial1.printf("%02X ", buffer[i]);
   }
   Serial1.println();
@@ -88,26 +79,25 @@ void loop()
   stream = pb_istream_from_buffer(buffer, bytesRead);
   message = cyberrc_CyberRCMessage_init_zero;
   // message.payload.funcs.decode = &skip_inner_message_callback;
-  if (!pb_decode_noinit(&stream, cyberrc_CyberRCMessage_fields, &message))
-  {
+  if (!pb_decode_noinit(&stream, cyberrc_CyberRCMessage_fields, &message)) {
     // Error decoding the outer message
     return;
   }
 #ifdef DEBUG
   Serial1.printf("Decode outer type %d\n", message.type);
 #endif
-  // The message wrapper is our internal structure for holding the wrapper, and the payload data.
-  // Clear the message wrapper to receive the new data.
+  // The message wrapper is our internal structure for holding the wrapper, and
+  // the payload data. Clear the message wrapper to receive the new data.
   memset(&message_wrapper, 0, sizeof(MessageWrapper));
   message_wrapper.type = message.type;
 
-  // Set the payload callback to decode the inner message based on the type field in the outer message.
-  // We will decode the data into the message wrapper.
+  // Set the payload callback to decode the inner message based on the type
+  // field in the outer message. We will decode the data into the message
+  // wrapper.
   stream = pb_istream_from_buffer(buffer, bytesRead);
   message.payload.funcs.decode = decode_inner_message_callback;
   message.payload.arg = &message_wrapper;
-  if (!pb_decode(&stream, cyberrc_CyberRCMessage_fields, &message))
-  {
+  if (!pb_decode(&stream, cyberrc_CyberRCMessage_fields, &message)) {
     // Error decoding the inner message
     return;
   }
@@ -116,8 +106,7 @@ void loop()
 #ifdef DEBUG
   Serial1.printf("Decode inner type %d\n", message.type);
 #endif
-  if (message_wrapper.type == cyberrc_CyberRCMessage_MessageType_RCData)
-  {
+  if (message_wrapper.type == cyberrc_CyberRCMessage_MessageType_RCData) {
     controller_data = message_wrapper.payload.controller_data;
     // Process XInput Output
     int l_axis_x = CLAMP(controller_data.Rudder, -32768, 32767);
@@ -125,15 +114,17 @@ void loop()
     int r_axis_x = CLAMP(controller_data.Aileron, -32768, 32767);
     int r_axis_y = CLAMP(controller_data.Elevator, -32768, 32767);
 
-    double l2 = sqrt((double) (l_axis_x * l_axis_x) + (double) (l_axis_y * l_axis_y));
+    double l2 =
+        sqrt((double)(l_axis_x * l_axis_x) + (double)(l_axis_y * l_axis_y));
     if (l2 > 32767) {
-      double scale = (double) 32767 / l2; 
+      double scale = (double)32767 / l2;
       l_axis_x = (int)(l_axis_x * scale);
       l_axis_y = (int)(l_axis_y * scale);
     }
-    double r2 = sqrt((double) (r_axis_x * r_axis_x) + (double) (r_axis_y * r_axis_y));
+    double r2 =
+        sqrt((double)(r_axis_x * r_axis_x) + (double)(r_axis_y * r_axis_y));
     if (r2 > 32767) {
-      double scale = (double) 32767 / r2; 
+      double scale = (double)32767 / r2;
       r_axis_x = (int)(r_axis_x * scale);
       r_axis_y = (int)(r_axis_y * scale);
     }
@@ -142,7 +133,8 @@ void loop()
     XInput.send();
 #ifdef DEBUG
     Serial1.printf("Decoded RCData\n");
-    Serial1.printf("Aileron: %d\n", message_wrapper.payload.controller_data.Aileron);
+    Serial1.printf("Aileron: %d\n",
+                   message_wrapper.payload.controller_data.Aileron);
     Serial1.printf("Elevator: %d\n", controller_data.Elevator);
     Serial1.printf("Throttle: %d\n", controller_data.Throttle);
     Serial1.printf("Rudder: %d\n", controller_data.Rudder);
@@ -150,18 +142,16 @@ void loop()
 #ifdef DEBUG
     XInput.printDebug(Serial1);
 #endif
-  } else if (message_wrapper.type == cyberrc_CyberRCMessage_MessageType_PPMUpdate)
-  {
+  } else if (message_wrapper.type ==
+             cyberrc_CyberRCMessage_MessageType_PPMUpdate) {
     ppm_data = message_wrapper.payload.ppm_data;
     uint32_t line = ppm_data.line;
-    if (line > NUM_LINES)
-    {
+    if (line > NUM_LINES) {
       // TODO: debug message
       return;
     }
     PulsePositionOutput output_channel = output_channels[line];
-    for (std::size_t i = 0; i < ppm_data.channel_values_count; i++)
-    {
+    for (std::size_t i = 0; i < ppm_data.channel_values_count; i++) {
       output_channel.write(i + 1, channel_values[i]);
-    } 
+    }
   }
