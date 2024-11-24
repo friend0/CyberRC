@@ -23,13 +23,13 @@ static bool pb_stream_read(pb_istream_t *stream, pb_byte_t *buf, size_t count)
 // Function to read data from the serial interface into a buffer
 size_t read_serial_to_buffer(uint8_t *buffer, size_t buffer_size) {
     size_t bytesRead = 0;
-    unsigned long startTime = micros();
+    unsigned long startTime = millis();
 
     // Read bytes until the buffer is full or timeout occurs
     while (bytesRead < buffer_size) {
         if (Serial1.available()) {
             buffer[bytesRead++] = Serial1.read();
-        } else if (micros() - startTime > 750) {
+        } else if (millis() - startTime > 5) {
             // Stop reading if timeout is reached
             break;
         } else {
