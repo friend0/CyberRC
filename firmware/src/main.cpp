@@ -11,14 +11,17 @@
 #include "usb_desc.h"
 
 #define SERIAL_MODE
-#define DEBUG
+// When operating in debug mode, you must ensure that the debugging code is 
+// actively clearing from the buffer, as there is currently no check on this end.
+// #define DEBUG
 
 // Config
 unsigned long now, previous;
 // TODO: not implemented. wire to a switch to enable/disable control output
 const int SafetyPin = 34;
 const int ledPin = 13;
-bool buttonState = false;
+volatile bool ledState = false;
+IntervalTimer myTimer;
 
 cyberrc_CyberRCMessage message = cyberrc_CyberRCMessage_init_zero;
 cyberrc_RCData controller_data = cyberrc_RCData_init_zero;
@@ -30,7 +33,7 @@ const unsigned long CycleTime = 5000; // ms
 bool proto_decode_status;
 #ifdef SERIAL_MODE
 uint8_t serial_read_buffer[32768];
-uint8_t serial_write_buffer[4096];
+uint8_t serial_write_buffer[32768];
 pb_istream_t stream;
 #else
 // Ethernet Setup
@@ -43,10 +46,6 @@ char packetBuffer[UDP_TX_PACKET_MAX_SIZE];
 // Newer Ethernet shields have a MAC address printed on a sticker on the shield
 byte mac[] = {0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x02};
 #endif
-
-// Joystick Setup
-const int JoyMin = -1500;
-const int JoyMax = 1500;
 
 #define CLAMP(val, min_val, max_val) ((val) < (min_val) ? (min_val) : ((val) > (max_val) ? (max_val) : (val)))
 
@@ -118,11 +117,18 @@ bool decode_inner_message_callback(pb_istream_t *stream, const pb_field_t *field
   return true;
 }
 
+void toggleLED() {
+    ledState = !ledState;        // Toggle LED state
+    digitalWrite(ledPin, ledState); // Update the LED pin
+}
+
 void setup()
 {
   // Safety Pin Setup
   // pinMode(SafetyPin, INPUT_PULLUP);
-  Serial1.begin(921600);
+  pinMode(ledPin, OUTPUT);    // Configure LED pin as output
+  myTimer.begin(toggleLED, 500000); // Set up timer to toggle LED every 500ms
+  Serial1.begin(230400);
   Serial1.addMemoryForRead(&serial_read_buffer, sizeof(serial_read_buffer));
   Serial1.addMemoryForWrite(&serial_write_buffer, sizeof(serial_write_buffer));
 
@@ -220,6 +226,18 @@ void loop()
     int r_axis_x = CLAMP(controller_data.Aileron, -32768, 32767);
     int r_axis_y = CLAMP(controller_data.Elevator, -32768, 32767);
 
+    double l2 = sqrt((double) (l_axis_x * l_axis_x) + (double) (l_axis_y * l_axis_y));
+    if (l2 > 32767) {
+      double scale = (double) 32767 / l2; 
+      l_axis_x = (int)(l_axis_x * scale);
+      l_axis_y = (int)(l_axis_y * scale);
+    }
+    double r2 = sqrt((double) (r_axis_x * r_axis_x) + (double) (r_axis_y * r_axis_y));
+    if (r2 > 32767) {
+      double scale = (double) 32767 / r2; 
+      r_axis_x = (int)(r_axis_x * scale);
+      r_axis_y = (int)(r_axis_y * scale);
+    }
     XInput.setJoystick(JOY_LEFT, l_axis_x, l_axis_y);
     XInput.setJoystick(JOY_RIGHT, r_axis_x, r_axis_y);
     XInput.send();

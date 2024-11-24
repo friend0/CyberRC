@@ -19,7 +19,7 @@ use cyberrc::RcData;
 pub struct Args {
     #[arg(short, long)]
     pub port: Option<String>,
-    #[arg(short, long, default_value = "921600")]
+    #[arg(short, long, default_value = "230400")]
     pub baud_rate: u32,
 }
 
@@ -197,13 +197,14 @@ pub fn write_controller(
     // Always send a non-zero arm value so that the payload always shows as decoded on the CyberRC
     // Difficult to tell the difference between a packet that fails to decode and a packet that
     // Just has no data.
-    controller_data.arm = 32767;
+    controller_data.arm = 1;
     message.r#type = cyberrc::cyber_rc_message::MessageType::RcData as i32;
     message.payload = controller_data.encode_to_vec();
     println!("Type: {}", message.r#type);
     println!("Payload: {:?}", message.payload);
 
     let buffer = message.encode_length_delimited_to_vec();
+    println!("Buffer: {:?}", buffer);
     print!("Writing to port: ");
     for byte in &buffer {
         print!("{:02X} ", byte);
