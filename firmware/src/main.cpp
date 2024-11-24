@@ -1,121 +1,31 @@
-#include <Ethernet.h>
-#include <EthernetUdp.h>
+#include <Arduino.h>
 #include <XInput.h>
-
-#include "RCData.pb.h"
-// #include <SoftwareSerial.h>
-// #include <nanopbUdp.h>
-
-#include <nanopbSerial.h>
 #include <pb.h>
-#include "usb_desc.h"
 
 #define SERIAL_MODE
 // When operating in debug mode, you must ensure that the debugging code is 
 // actively clearing from the buffer, as there is currently no check on this end.
 // #define DEBUG
+#include "config.h"
+#include "nanopbSerial.h"
+#include "RCData.pb.h"
+#include "utils.h"
 
-// Config
+
 unsigned long now, previous;
-// TODO: not implemented. wire to a switch to enable/disable control output
-const int SafetyPin = 34;
 const int ledPin = 13;
 volatile bool ledState = false;
 IntervalTimer myTimer;
 
-cyberrc_CyberRCMessage message = cyberrc_CyberRCMessage_init_zero;
-cyberrc_RCData controller_data = cyberrc_RCData_init_zero;
-cyberrc_RCData last_controller_data = cyberrc_RCData_init_zero;
-
-// Config Settings
-const unsigned long CycleTime = 5000; // ms
-
-bool proto_decode_status;
-#ifdef SERIAL_MODE
-uint8_t serial_read_buffer[32768];
-uint8_t serial_write_buffer[32768];
 pb_istream_t stream;
-#else
-// Ethernet Setup
-EthernetUDP Udp;
-IPAddress ip;
-unsigned int localPort = 6969;
-Stream &proto = Udp;
-char packetBuffer[UDP_TX_PACKET_MAX_SIZE];
-// Enter a MAC address for your controller below.
-// Newer Ethernet shields have a MAC address printed on a sticker on the shield
-byte mac[] = {0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x02};
-#endif
+bool proto_decode_status;
 
-#define CLAMP(val, min_val, max_val) ((val) < (min_val) ? (min_val) : ((val) > (max_val) ? (max_val) : (val)))
+// Joystick Setup
+const int JoyMin = -1500;
+const int JoyMax = 1500;
 
-#define NUM_CHANNELS 4
-// Structure to hold the decoded payload
-typedef struct
-{
-  int type;
-  u_int32_t channel_values[NUM_CHANNELS];
-
-  union
-  {
-    cyberrc_RCData controller_data;
-    cyberrc_PPMUpdateAll ppm_data;
-  } payload;
-} DecodedPayload;
-
-// Callback function for the first pass to skip the inner field
-bool skip_inner_message_callback(pb_istream_t *stream, const pb_field_t *field, void **arg)
-{
-  // Indicate to skip the field during the first pass
-  stream->errmsg = "Skipping inner message during type read";
-  return false;
-}
-
-bool decode_channel_values(pb_istream_t *stream, const pb_field_iter_t *field, void **arg)
-{
-  int i = 0;
-  uint32_t value;
-  u_int32_t *values = static_cast<u_int32_t *>(*arg);
-  while (stream->bytes_left)
-  {
-    if (!pb_decode_varint32(stream, &value))
-      return false;
-    values[i] = value;
-    i++;
-  }
-  return true;
-}
-
-// Callback function to decode the nested message based on the type field in OuterMessage
-bool decode_inner_message_callback(pb_istream_t *stream, const pb_field_t *field, void **arg)
-{
-  DecodedPayload *decoded_payload = (DecodedPayload *)*arg;
-  if (decoded_payload->type == 1)
-  {
-    cyberrc_RCData msg = cyberrc_RCData_init_zero;
-    if (!pb_decode(stream, cyberrc_RCData_fields, &msg))
-    {
-      return false;
-    }
-    decoded_payload->payload.controller_data = msg;
-  }
-  else if (decoded_payload->type == 0)
-  {
-    cyberrc_PPMUpdateAll msg = cyberrc_PPMUpdateAll_init_zero;
-    msg.channel_values.arg = decoded_payload->channel_values;
-    msg.channel_values.funcs.decode = &decode_channel_values;
-    if (!pb_decode(stream, cyberrc_PPMUpdateAll_fields, &msg))
-    {
-      return false;
-    }
-    decoded_payload->payload.ppm_data = msg;
-  }
-  else
-  {
-    return false;
-  }
-  return true;
-}
+uint8_t buffer[cyberrc_RCData_size];
+MessageWrapper message_wrapper;
 
 void toggleLED() {
     ledState = !ledState;        // Toggle LED state
@@ -124,6 +34,7 @@ void toggleLED() {
 
 void setup()
 {
+  setup_ppm();
   // Safety Pin Setup
   // pinMode(SafetyPin, INPUT_PULLUP);
   pinMode(ledPin, OUTPUT);    // Configure LED pin as output
@@ -131,30 +42,13 @@ void setup()
   Serial1.begin(230400);
   Serial1.addMemoryForRead(&serial_read_buffer, sizeof(serial_read_buffer));
   Serial1.addMemoryForWrite(&serial_write_buffer, sizeof(serial_write_buffer));
+  Serial1.begin(230400);
+  Serial1.addMemoryForRead(&SERIAL_READ_BUFFER, sizeof(SERIAL_READ_BUFFER));
+  Serial1.addMemoryForWrite(&SERIAL_WRITE_BUFFER, sizeof(SERIAL_WRITE_BUFFER));
 
   // xInput Setup
   XInput.setAutoSend(false);
   XInput.begin();
-
-#ifndef SERIAL_MODE
-  // Ethernet Setup
-  if (Ethernet.hardwareStatus() == EthernetNoHardware)
-  {
-    blink_loop(ledPin, 1000);
-  }
-  if (Ethernet.linkStatus() == LinkOFF)
-  {
-    blink_loop(ledPin, 3000);
-  }
-  if (Ethernet.begin(mac) == 0)
-  {
-    // TODO: blink led
-    blink_loop(ledPin, 5000);
-  }
-  ip = Ethernet.localIP();
-  Ethernet.begin(mac, ip);
-  Udp.begin(ip);
-#endif
 }
 
 void loop()
@@ -163,14 +57,17 @@ void loop()
   {
   }
 
-  uint8_t buffer[cyberrc_RCData_size];
+  CLEAR_BUFFER(buffer);
 
-  int len = Serial1.read();
+  // Read the first byte of the message, which is the length of the message.
+  // Note this implies a message limit of 355 bytes.
+  int message_size = Serial1.read();
 #ifdef DEBUG
-  Serial1.printf("Length of message %d\n", len);
+  Serial1.printf("Length of message %d\n", message_size);
 #endif
-  size_t bytesRead = read_serial_to_buffer(buffer, len);
-  if (bytesRead != len)
+  // With the given message size, read that number of bytes into the buffer.
+  size_t bytesRead = read_serial_to_buffer(buffer, message_size);
+  if (bytesRead != message_size)
   {
     // Error reading the message
 #ifdef DEBUG
@@ -187,39 +84,41 @@ void loop()
   }
   Serial1.println();
 #endif
+  // Get a stream from the buffer, and initialize the message wrapper.
   stream = pb_istream_from_buffer(buffer, bytesRead);
   message = cyberrc_CyberRCMessage_init_zero;
   // message.payload.funcs.decode = &skip_inner_message_callback;
-
   if (!pb_decode_noinit(&stream, cyberrc_CyberRCMessage_fields, &message))
   {
-    // Error decoding the message
+    // Error decoding the outer message
     return;
   }
 #ifdef DEBUG
   Serial1.printf("Decode outer type %d\n", message.type);
 #endif
-  DecodedPayload decoded_payload;
-  decoded_payload.type = message.type;
-  // memset(decoded_payload.channel_values, 0, sizeof(decoded_payload.channel_values));
-  // memset(&decoded_payload.payload.controller_data, 0, sizeof(decoded_payload.payload.controller_data));
-  // memset(&decoded_payload.payload.ppm_data, 0, sizeof(decoded_payload.payload.ppm_data));
+  // The message wrapper is our internal structure for holding the wrapper, and the payload data.
+  // Clear the message wrapper to receive the new data.
+  memset(&message_wrapper, 0, sizeof(MessageWrapper));
+  message_wrapper.type = message.type;
 
+  // Set the payload callback to decode the inner message based on the type field in the outer message.
+  // We will decode the data into the message wrapper.
   stream = pb_istream_from_buffer(buffer, bytesRead);
   message.payload.funcs.decode = decode_inner_message_callback;
-  message.payload.arg = &decoded_payload;
+  message.payload.arg = &message_wrapper;
   if (!pb_decode(&stream, cyberrc_CyberRCMessage_fields, &message))
   {
-    // Error decoding the message
+    // Error decoding the inner message
     return;
   }
 
+  // Based on the type of message, determine what interface to write output to.
 #ifdef DEBUG
   Serial1.printf("Decode inner type %d\n", message.type);
 #endif
-  if (decoded_payload.type == cyberrc_CyberRCMessage_MessageType_RCData)
+  if (message_wrapper.type == cyberrc_CyberRCMessage_MessageType_RCData)
   {
-    controller_data = decoded_payload.payload.controller_data;
+    controller_data = message_wrapper.payload.controller_data;
     // Process XInput Output
     int l_axis_x = CLAMP(controller_data.Rudder, -32768, 32767);
     int l_axis_y = CLAMP(controller_data.Throttle, -32768, 32767);
@@ -243,7 +142,7 @@ void loop()
     XInput.send();
 #ifdef DEBUG
     Serial1.printf("Decoded RCData\n");
-    Serial1.printf("Aileron: %d\n", decoded_payload.payload.controller_data.Aileron);
+    Serial1.printf("Aileron: %d\n", message_wrapper.payload.controller_data.Aileron);
     Serial1.printf("Elevator: %d\n", controller_data.Elevator);
     Serial1.printf("Throttle: %d\n", controller_data.Throttle);
     Serial1.printf("Rudder: %d\n", controller_data.Rudder);
@@ -251,15 +150,18 @@ void loop()
 #ifdef DEBUG
     XInput.printDebug(Serial1);
 #endif
-  } else if (decoded_payload.type == 0)
+  } else if (message_wrapper.type == cyberrc_CyberRCMessage_MessageType_PPMUpdate)
   {
-    cyberrc_PPMUpdateAll msg = cyberrc_PPMUpdateAll_init_zero;
-    msg.channel_values.arg = decoded_payload.channel_values;
-    msg.channel_values.funcs.decode = &decode_channel_values;
-    if (!pb_decode(&stream, cyberrc_PPMUpdateAll_fields, &msg))
+    ppm_data = message_wrapper.payload.ppm_data;
+    uint32_t line = ppm_data.line;
+    if (line > NUM_LINES)
     {
+      // TODO: debug message
       return;
     }
-    decoded_payload.payload.ppm_data = msg;
+    PulsePositionOutput output_channel = output_channels[line];
+    for (std::size_t i = 0; i < ppm_data.channel_values_count; i++)
+    {
+      output_channel.write(i + 1, channel_values[i]);
+    } 
   }
-}
