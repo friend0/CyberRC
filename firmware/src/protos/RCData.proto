@@ -26,5 +26,6 @@ message RCData {
 
 message PPMUpdateAll {
     int32 line = 1;
-    repeated int32 channel_values = 2[packed=true];
+    int32 channel_values_count = 2;
+    repeated int32 channel_values = 3[packed=true];
 }
