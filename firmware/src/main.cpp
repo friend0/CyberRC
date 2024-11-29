@@ -35,7 +35,6 @@ void setup() {
  
   // Safety Pin Setup
   // pinMode(SafetyPin, INPUT_PULLUP);
-  CrashReport.breadcrumb(2, 77778888);
   delay(1000);
  
   pinMode(ledPin, OUTPUT);          // Configure LED pin as output
@@ -45,13 +44,9 @@ void setup() {
   Serial1.println("Setting up XInput");
   Serial1.flush();
   delay(1000);
-  CrashReport.breadcrumb(2, 88888888);
-
   XInput.setAutoSend(false);
   XInput.begin();
-  CrashReport.breadcrumb(2, 99999999);
-
-  Serial1.println("Starting");
+  Serial1.println("Starting...");
 }
 
 void loop() {
