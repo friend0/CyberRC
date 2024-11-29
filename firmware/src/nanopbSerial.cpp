@@ -3,9 +3,6 @@
 #include "RCData.pb.h"
 #include <Arduino.h>
 
-uint8_t SERIAL_READ_BUFFER[32768];
-uint8_t SERIAL_WRITE_BUFFER[4096];
-
 // Message Wrapper
 cyberrc_CyberRCMessage message = cyberrc_CyberRCMessage_init_zero;
 // RC Messages
@@ -50,9 +47,9 @@ size_t read_serial_to_buffer(uint8_t *buffer, size_t buffer_size) {
 bool read_from_serial(pb_istream_t *stream, uint8_t *buf, size_t count) {
     HardwareSerial *serial = (HardwareSerial *)stream->state;
     // Wait until enough bytes are available or timeout
-    unsigned long startTime = micros();
+    unsigned long startTime = millis();
     while ((size_t)serial->available() < count) {
-        if (micros() - startTime > 750) { // 100 microsecond timeout, adjust as needed
+        if (millis() - startTime > 5) {
             return false;
         }
     }
@@ -123,13 +120,17 @@ bool decode_inner_message_callback(pb_istream_t *stream, const pb_field_t *field
         .channel_values = payload,
     };
     decoded_payload->channel_values_count = msg.channel_values_count;
-    msg.channel_values.arg = &payload;
+    msg.channel_values.arg = &ppm_payload;
     msg.channel_values.funcs.decode = decode_channel_values;
     if (!pb_decode(stream, cyberrc_PPMUpdateAll_fields, &msg))
     {
       return false;
     }
     decoded_payload->payload.ppm_data = msg;
+    decoded_payload->channel_values_count = msg.channel_values_count;
+    for (int i = 0; i < msg.channel_values_count; i++) {
+        decoded_payload->channel_values[i] = payload[i];
+    }
   }
   else
   {

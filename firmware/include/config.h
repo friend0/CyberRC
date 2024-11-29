@@ -25,7 +25,9 @@ extern const int ppm_output_pins[10];
 
 extern PulsePositionOutput output_channels[NUM_LINES];
 
-extern u_int32_t channel_values[MAX_NUM_CHANNELS];
+extern u_int32_t channel_values[NUM_LINES][MAX_NUM_CHANNELS];
+
+void setup_serial();
 
 void setup_ppm();
 

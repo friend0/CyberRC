@@ -3,7 +3,6 @@
 #include "config.h"
 #include "nanopbSerial.h"
 #include "utils.h"
-#include <IntervalTimer.h>
 
 // When operating in debug mode, you must ensure that the debugging code is
 // actively clearing from the buffer, as there is currently no check on this
@@ -13,7 +12,6 @@
 unsigned long now, previous;
 const int ledPin = 13;
 volatile bool ledState = false;
-IntervalTimer myTimer;
 
 pb_istream_t stream;
 bool proto_decode_status;
@@ -31,24 +29,39 @@ void toggleLED() {
 }
 
 void setup() {
+  setup_serial();
   setup_ppm();
+  delay(1000);
+ 
   // Safety Pin Setup
   // pinMode(SafetyPin, INPUT_PULLUP);
+  CrashReport.breadcrumb(2, 77778888);
+  delay(1000);
+ 
   pinMode(ledPin, OUTPUT);          // Configure LED pin as output
-  myTimer.begin(toggleLED, 500000); // Set up timer to toggle LED every 500ms
-  Serial1.begin(230400);
-  Serial1.addMemoryForRead(&SERIAL_READ_BUFFER, sizeof(SERIAL_READ_BUFFER));
-  Serial1.addMemoryForWrite(&SERIAL_WRITE_BUFFER, sizeof(SERIAL_WRITE_BUFFER));
 
   // xInput Setup
+
+  Serial1.println("Setting up XInput");
+  Serial1.flush();
+  delay(1000);
+  CrashReport.breadcrumb(2, 88888888);
+
   XInput.setAutoSend(false);
   XInput.begin();
+  CrashReport.breadcrumb(2, 99999999);
+
   Serial1.println("Starting");
 }
 
 void loop() {
+  static long last_time = 0;
   Serial1.println("Looping");
   while (!Serial1.available()) {
+    if (millis() - last_time > 500) {
+      toggleLED();
+      last_time = millis();
+    }
   }
 
   CLEAR_BUFFER(buffer);
@@ -147,6 +160,7 @@ void loop() {
              cyberrc_CyberRCMessage_MessageType_PPMUpdate) {
     ppm_data = message_wrapper.payload.ppm_data;
     uint32_t line = ppm_data.line;
+    uint32_t *channel_values = message_wrapper.channel_values;
     if (line > NUM_LINES) {
       // TODO: debug message
       return;
