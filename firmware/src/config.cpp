@@ -38,11 +38,11 @@ void setup_ppm()
     Serial1.println("Setting up PPM");
     for (int i=0; i<NUM_LINES; i++)
     {
-      Serial1.printf("Setting up channel %d\n", i);
+      Serial1.printf("Setting up channel %d\r\n", i);
       Serial1.printf("Initializing PPM %d on pin %d\r\n", i, ppm_output_pins[i]);
       Serial1.flush();
       output_channels[i] = PulsePositionOutput(FALLING);
-      output_channels[i].begin(11);
+      output_channels[i].begin(ppm_output_pins[i]);
       // for (int j = 1; j <= MAX_NUM_CHANNELS; j++)
       // {
       //   output_channels[i].write(j, 1500);
