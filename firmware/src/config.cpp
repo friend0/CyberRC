@@ -43,14 +43,14 @@ void setup_ppm()
       Serial1.flush();
       output_channels[i] = PulsePositionOutput(FALLING);
       output_channels[i].begin(ppm_output_pins[i]);
-      // for (int j = 1; j <= MAX_NUM_CHANNELS; j++)
-      // {
-      //   output_channels[i].write(j, 1500);
-      // }
-      // for (int j=0; j<MAX_NUM_CHANNELS; j++)
-      // {
-      //   output_channels[i].write(j + 1, 1500);
-      // }
+      for (int j = 1; j <= MAX_NUM_CHANNELS; j++)
+      {
+        output_channels[i].write(j, 1500);
+      }
+      for (int j=0; j<MAX_NUM_CHANNELS; j++)
+      {
+        output_channels[i].write(j + 1, 1500);
+      }
     }
 }
 
