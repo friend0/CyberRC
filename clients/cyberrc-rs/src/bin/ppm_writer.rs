@@ -15,7 +15,7 @@ use cyberrc::RcData;
 pub struct Args {
     #[arg(short, long)]
     pub port: Option<String>,
-    #[arg(short, long, default_value = "921600")]
+    #[arg(short, long, default_value = "230400")]
     pub baud_rate: u32,
 }
 
@@ -45,6 +45,13 @@ async fn main() {
                     .read_line(&mut choice)
                     .expect("Failed to read input");
                 let value: usize = choice.trim().parse().expect("Please type a number");
+                if value > ports.len() {
+                    eprintln!(
+                        "Invalid choice. Please select a number from 0-{}",
+                        ports.len()
+                    );
+                    continue;
+                }
                 let port_name = ports[value].port_name.clone();
                 break serialport::new(port_name, args.baud_rate);
             }
@@ -182,6 +189,7 @@ pub fn write_controller(
 ) -> Result<(), anyhow::Error> {
     let mut message = cyberrc::CyberRcMessage::default();
     let mut controller_data = cyberrc::PpmUpdateAll::default();
+    controller_data.channel_values.resize(4, 1500);
     match channel {
         Controls::Aileron => {
             controller_data.channel_values[0] = value;
