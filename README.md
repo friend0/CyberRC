@@ -1,14 +1,14 @@
 # CyberRC
 
-The goal for this project is to allow autonomous controllers to close the loop with simulated systems such as those running in video games.
-CyberRC implements a gamepad emulator, and client code so that controllers can send outputs to games as if there were a "real" controller plugged in.
-This implemntation taked advantage of the Teensy 4.1's ability to implement an HID and behave like a gamepad or joystick.
+CyberRC implements a gamepad emulator, and PPM generator on an embedded system to allow classical and machine controllers to interface with cyber systems in video games, as well as physical RC vehicles.
+CyberRC uses a Teensy 4.1 to simulate an Xbox gamepad, or to generate a PPM signal to drive an RC controller based on input Protobuf messages delivered over Serial.
 
-The initial use case is to interface automatic control with the game "Liftoff: Micro Drones" using it's inbuilt functionality to output
-state data over UDP.
+The initial use case is to interface automatic control with the game "Liftoff: Micro Drones". Liftoff provides state feedback over UDP.
+Combined with the CyberRC, closed loop control can be implemented to allow for autonomous flight.
 
-CyberRC is a sister library to CyberTX.
-Where CyberTX enables users to send Protobuf encoded commands (and 'plain' serial encoded data from Matlab) to a physical RC with a trainer input (like the Radiomaster Zorro), 
-CyberRC enables users to send Protobuf encoded commands to an emulated gamepad.
-This is useful in cases where you would like to take outputs from an autonomous controller and feed them into a video game.
+## Implementation Notes
 
+This implementation does not use the "native" PPM library for the teensy due to an issue with the system crashing on initialization.
+This is likely a surmountable issue, but a custom implementation is currently being used to save time on debug.
+When possible, the native library should be used for better performance and more outputs.
+For users requiring the higher resolution PPM, or for more outputs, see the implementation in CyberTX, which does not include firmware for gamepad emulation.
