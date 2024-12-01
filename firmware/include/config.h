@@ -1,6 +1,6 @@
 #include <Arduino.h>
-#include "PulsePositionMod.h"
 #include "RCData.pb.h"
+#include "ppm.h"
 
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -13,7 +13,7 @@
 
 // todo: PPM library does not make this configurable out of the box
 // you will need to update the #define in PulsePosition.h until this is implemented as a new feature
-#define MAX_NUM_CHANNELS 16 // set the number of channels per line
+#define MAX_NUM_CHANNELS 4 // set the number of channels per line
 
 #if defined(ARDUINO_TEENSY31) || defined(ARDUINO_TEENSY32)
 extern const int ppm_output_pins[8];
@@ -23,12 +23,12 @@ extern const int ppm_output_pins[10];
     #error "Unsupported board"
 #endif
 
-extern PulsePositionOutput output_channels[NUM_LINES];
+extern PPMGenerator ppm_output;
 
 extern u_int32_t channel_values[NUM_LINES][MAX_NUM_CHANNELS];
 
 void setup_serial();
 
-void setup_ppm();
+void initialize_ppm();
 
 #endif // CONFIG_H
