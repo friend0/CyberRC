@@ -1,5 +1,4 @@
 use prost::Message;
-use rerun::external::arrow2::io::ipc::read;
 use serialport::{SerialPort, SerialPortBuilder, SerialPortType};
 use std::io::Write;
 use std::time::Duration;
@@ -20,7 +19,7 @@ pub enum Controls {
 }
 
 pub struct Writer {
-    serial_port: Box<dyn SerialPort>,
+    pub serial_port: Box<dyn SerialPort>,
     pub baud_rate: u32,
 }
 
@@ -29,7 +28,7 @@ impl Writer {
         let mut port = serialport::new(port, baud_rate)
             .open()
             .map_err(|e| anyhow::anyhow!(e))?;
-        port.set_timeout(Duration::from_secs(1))?;
+        port.set_timeout(Duration::from_millis(5))?;
         Ok(Self {
             serial_port: port,
             baud_rate,
