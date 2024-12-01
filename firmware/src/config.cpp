@@ -8,8 +8,8 @@ const int ppm_output_pins[10] = {6, 9, 10, 11, 12, 13, 14, 15, 18, 19};
     #error "Unsupported board"
 #endif
 
-PulsePositionOutput output_channels[NUM_LINES];
-// PulsePositionOutput ppm_output;
+PPMGenerator ppm_generator = PPMGenerator(ppm_output_pins[0], channel_values[0], MAX_NUM_CHANNELS);
+
 uint32_t channel_values[NUM_LINES][MAX_NUM_CHANNELS];
 
 uint8_t SERIAL_READ_BUFFER[32768];
@@ -33,24 +33,12 @@ void setup_serial()
     }
 }
 
+static uint32_t control_defaults[4] = {1500, 1500, 1000, 1500};
+
 void setup_ppm()
-{
-    Serial1.println("Setting up PPM");
-    for (int i=0; i<NUM_LINES; i++)
+{  
+    for (uint8_t i = 0; i < MAX_NUM_CHANNELS; i++)
     {
-      Serial1.printf("Setting up channel %d\r\n", i);
-      Serial1.printf("Initializing PPM %d on pin %d\r\n", i, ppm_output_pins[i]);
-      Serial1.flush();
-      output_channels[i] = PulsePositionOutput(FALLING);
-      output_channels[i].begin(ppm_output_pins[i]);
-      for (int j = 1; j <= MAX_NUM_CHANNELS; j++)
-      {
-        output_channels[i].write(j, 1500);
-      }
-      for (int j=0; j<MAX_NUM_CHANNELS; j++)
-      {
-        output_channels[i].write(j + 1, 1500);
-      }
+        ppm_output.updateChannel(i, control_defaults[i]);
     }
 }
-
