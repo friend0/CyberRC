@@ -15,6 +15,7 @@ uint32_t channel_values[NUM_LINES][MAX_NUM_CHANNELS];
 uint8_t SERIAL_READ_BUFFER[32768];
 uint8_t SERIAL_WRITE_BUFFER[4096];
 
+/// @brief Setup the serial port for communication
 void setup_serial()
 {
     Serial1.begin(230400);
@@ -33,9 +34,11 @@ void setup_serial()
     }
 }
 
+// Default control values: mid stick for control surfaces, zero throttle
 static uint32_t control_defaults[4] = {1500, 1500, 1000, 1500};
 
-void setup_ppm()
+/// @brief Initialize the PPM output
+void initialize_ppm()
 {  
     for (uint8_t i = 0; i < MAX_NUM_CHANNELS; i++)
     {
