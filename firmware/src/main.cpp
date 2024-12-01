@@ -33,16 +33,13 @@ void toggleLED() {
 
 void setup() {
   setup_serial();
-  setup_ppm();
-
+  initialize_ppm();
   // Safety Pin Setup
   // pinMode(SafetyPin, INPUT_PULLUP);
   pinMode(ledPin, OUTPUT);          // Configure LED pin as output
-
   // xInput Setup
   Serial1.println("Setting up XInput");
   Serial1.flush();
-  delay(1000);
   XInput.setAutoSend(false);
   XInput.begin();
   Serial1.println("Starting...");
@@ -97,6 +94,7 @@ void loop() {
   // the payload data. Clear the message wrapper to receive the new data.
   memset(&message_wrapper, 0, sizeof(MessageWrapper));
   message_wrapper.type = message.type;
+  message_wrapper.channel_values_count = message.channel_values_count;
 
   // Set the payload callback to decode the inner message based on the type
   // field in the outer message. We will decode the data into the message
@@ -106,6 +104,9 @@ void loop() {
   message.payload.arg = &message_wrapper;
   if (!pb_decode(&stream, cyberrc_CyberRCMessage_fields, &message)) {
     // Error decoding the inner message
+#ifdef DEBUG
+  Serial1.println("Failed to decode inner type");
+#endif
     return;
   }
 
@@ -155,10 +156,12 @@ void loop() {
     uint32_t line = ppm_data.line;
     uint32_t *channel_values = message_wrapper.channel_values;
     if (line > NUM_LINES) {
-      // TODO: debug message
+#ifdef DEBUG
+    Serial1.printf("Line %d is out of bounds\r\n", line);
+#endif
       return;
     }
-    for (uint8_t i = 0; i < ppm_data.channel_values_count; i++) {
+    for (uint8_t i = 0; i < message_wrapper.channel_values_count; i++) {
       ppm_output.updateChannel(i, channel_values[i]);
     }
   }
