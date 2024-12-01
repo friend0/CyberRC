@@ -113,14 +113,14 @@ async fn main() {
         };
         let value: i32 = match value.trim().parse::<i32>() {
             Ok(v) => {
-                if v < -1500 || v > 1500 {
-                    eprintln!("Invalid value. Expecting a value between -1500 and 1500.");
+                if v < 900 || v > 2100 {
+                    eprintln!("Invalid value. Expecting a value between 1000 and 2000.");
                     continue;
                 }
                 v as i32
             }
             Err(_) => {
-                eprintln!("Invalid value. Expecting an int between -1500 and 1500.");
+                eprintln!("Invalid value. Expecting an int between 1000 and 2000.");
                 continue;
             }
         };
@@ -185,30 +185,35 @@ async fn read_feedback(port: &mut dyn SerialPort) {
 pub fn write_controller(
     writer: &mut dyn SerialPort,
     channel: Controls,
+    channel_values: &mut Vec<i32>,
     value: i32,
 ) -> Result<(), anyhow::Error> {
     let mut message = cyberrc::CyberRcMessage::default();
     let mut controller_data = cyberrc::PpmUpdateAll::default();
-    controller_data.channel_values.resize(4, 1500);
     match channel {
         Controls::Aileron => {
-            controller_data.channel_values[0] = value;
+            channel_values[0] = value;
         }
         Controls::Elevator => {
-            controller_data.channel_values[1] = value;
+            channel_values[1] = value;
         }
         Controls::Throttle => {
-            controller_data.channel_values[2] = value;
+            channel_values[2] = value;
         }
         Controls::Rudder => {
-            controller_data.channel_values[3] = value;
+            channel_values[3] = value;
         }
     };
+    channel_values.iter().for_each(|value| {
+        println!("Controller channel {}", value);
+    });
+    controller_data.channel_values = channel_values.clone();
+
     message.r#type = cyberrc::cyber_rc_message::MessageType::PpmUpdate as i32;
+    message.channel_values_count = controller_data.channel_values.len() as i32;
     message.payload = controller_data.encode_to_vec();
     println!("Type: {}", message.r#type);
     println!("Payload: {:?}", message.payload);
-
     let buffer = message.encode_length_delimited_to_vec();
     print!("Writing to port: ");
     for byte in &buffer {

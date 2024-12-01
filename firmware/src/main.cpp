@@ -22,6 +22,9 @@ const int JoyMax = 1500;
 
 uint8_t buffer[255];
 MessageWrapper message_wrapper;
+PPMGenerator ppm_output(ppm_output_pins[0], channel_values[0], MAX_NUM_CHANNELS);
+
+static uint32_t control_defaults[4] = {1500, 1500, 1000, 1500};
 
 void toggleLED() {
   ledState = !ledState;           // Toggle LED state
@@ -31,16 +34,12 @@ void toggleLED() {
 void setup() {
   setup_serial();
   setup_ppm();
-  delay(1000);
- 
+
   // Safety Pin Setup
   // pinMode(SafetyPin, INPUT_PULLUP);
-  delay(1000);
- 
   pinMode(ledPin, OUTPUT);          // Configure LED pin as output
 
   // xInput Setup
-
   Serial1.println("Setting up XInput");
   Serial1.flush();
   delay(1000);
@@ -51,7 +50,6 @@ void setup() {
 
 void loop() {
   static long last_time = 0;
-  Serial1.println("Looping");
   while (!Serial1.available()) {
     if (millis() - last_time > 500) {
       toggleLED();
@@ -160,9 +158,8 @@ void loop() {
       // TODO: debug message
       return;
     }
-    PulsePositionOutput output_channel = output_channels[line];
-    for (std::size_t i = 0; i < ppm_data.channel_values_count; i++) {
-      output_channel.write(i + 1, channel_values[i]);
+    for (uint8_t i = 0; i < ppm_data.channel_values_count; i++) {
+      ppm_output.updateChannel(i, channel_values[i]);
     }
   }
 }
