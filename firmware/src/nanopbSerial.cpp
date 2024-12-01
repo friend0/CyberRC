@@ -32,7 +32,7 @@ size_t read_serial_to_buffer(uint8_t *buffer, size_t buffer_size) {
     while (bytesRead < buffer_size) {
         if (Serial1.available()) {
             buffer[bytesRead++] = Serial1.read();
-        } else if (micros() - startTime > 25) {
+        } else if (millis() - startTime > 25) {
             // Stop reading if timeout is reached
             break;
         } else {
@@ -89,7 +89,8 @@ bool decode_channel_values(pb_istream_t *stream, const pb_field_iter_t *field, v
   {
     if (!pb_decode_varint32(stream, &value))
       return false;
-    context->channel_values[i] = &value;
+    Serial1.printf("Decoding value: %d \r\n", value);
+    context->channel_values[i] = value;
     i++;
   }
   if (i != context->channel_values_count || stream ->bytes_left) {
@@ -114,12 +115,10 @@ bool decode_inner_message_callback(pb_istream_t *stream, const pb_field_t *field
   else if (decoded_payload->type == 0)
   {
     cyberrc_PPMUpdateAll msg = cyberrc_PPMUpdateAll_init_zero;
-    uint32_t payload[MAX_NUM_CHANNELS];
     PPMPayload ppm_payload = {
-        .channel_values_count = msg.channel_values_count,
-        .channel_values = payload,
+        static_cast<uint8_t>(decoded_payload->channel_values_count),
+        {1500, 1500, 1000, 1500}
     };
-    decoded_payload->channel_values_count = msg.channel_values_count;
     msg.channel_values.arg = &ppm_payload;
     msg.channel_values.funcs.decode = decode_channel_values;
     if (!pb_decode(stream, cyberrc_PPMUpdateAll_fields, &msg))
@@ -127,9 +126,10 @@ bool decode_inner_message_callback(pb_istream_t *stream, const pb_field_t *field
       return false;
     }
     decoded_payload->payload.ppm_data = msg;
-    decoded_payload->channel_values_count = msg.channel_values_count;
-    for (int i = 0; i < msg.channel_values_count; i++) {
-        decoded_payload->channel_values[i] = payload[i];
+    decoded_payload->channel_values_count = ppm_payload.channel_values_count;
+    for (int i = 0; i < ppm_payload.channel_values_count; i++) {
+        Serial1.printf("Channel %d: %d\n", i, ppm_payload.channel_values[i]);
+        decoded_payload->channel_values[i] = ppm_payload.channel_values[i];
     }
   }
   else
