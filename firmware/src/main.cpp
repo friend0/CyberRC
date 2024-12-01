@@ -38,11 +38,9 @@ void setup() {
   // pinMode(SafetyPin, INPUT_PULLUP);
   pinMode(ledPin, OUTPUT);          // Configure LED pin as output
   // xInput Setup
-  Serial1.println("Setting up XInput");
   Serial1.flush();
   XInput.setAutoSend(false);
   XInput.begin();
-  Serial1.println("Starting...");
 }
 
 void loop() {

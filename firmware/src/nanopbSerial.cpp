@@ -27,16 +27,18 @@ pb_ostream_s pb_ostream_from_serial(Print &p)
 size_t read_serial_to_buffer(uint8_t *buffer, size_t buffer_size) {
     size_t bytesRead = 0;
     unsigned long startTime = millis();
-
     // Read bytes until the buffer is full or timeout occurs
     while (bytesRead < buffer_size) {
         if (Serial1.available()) {
             buffer[bytesRead++] = Serial1.read();
-        } else if (millis() - startTime > 25) {
+            // Tune this timeout to the baudrate and maximum message size
+        } else if (millis() - startTime > 5) {
             // Stop reading if timeout is reached
             break;
         } else {
-            delayMicroseconds(10);  // Small delay to wait for incoming data
+          // Small delay to wait for incoming data
+          // Tune this value to the baudrate and maximum message size
+          delayMicroseconds(20);  // Small delay to wait for incoming data
         }
     }
 
@@ -53,12 +55,8 @@ bool read_from_serial(pb_istream_t *stream, uint8_t *buf, size_t count) {
             return false;
         }
     }
-    
     // Read the required number of bytes
     serial->readBytes(buf, count);
-    for (int i = 0; i < count; i++) {
-        Serial1.printf("%02X ", buf[i]);
-    }
     return true;
 }
 
@@ -89,7 +87,6 @@ bool decode_channel_values(pb_istream_t *stream, const pb_field_iter_t *field, v
   {
     if (!pb_decode_varint32(stream, &value))
       return false;
-    Serial1.printf("Decoding value: %d \r\n", value);
     context->channel_values[i] = value;
     i++;
   }
@@ -128,7 +125,6 @@ bool decode_inner_message_callback(pb_istream_t *stream, const pb_field_t *field
     decoded_payload->payload.ppm_data = msg;
     decoded_payload->channel_values_count = ppm_payload.channel_values_count;
     for (int i = 0; i < ppm_payload.channel_values_count; i++) {
-        Serial1.printf("Channel %d: %d\n", i, ppm_payload.channel_values[i]);
         decoded_payload->channel_values[i] = ppm_payload.channel_values[i];
     }
   }
