@@ -1,3 +1,4 @@
+use cyberrc::{cyber_rc_message, CyberRcMessage};
 use prost::Message;
 use serialport::{SerialPort, SerialPortBuilder, SerialPortType};
 use std::io::Write;
@@ -23,6 +24,11 @@ pub struct Writer {
     pub baud_rate: u32,
 }
 
+enum CyberRCMessageType {
+    RcData(cyberrc::RcData),
+    PpmUpdate(cyberrc::PpmUpdateAll),
+}
+
 impl Writer {
     pub fn new(port: String, baud_rate: u32) -> Result<Self, anyhow::Error> {
         let mut port = serialport::new(port, baud_rate)
@@ -35,12 +41,28 @@ impl Writer {
         })
     }
 
-    pub fn write(&mut self, data: &mut cyberrc::RcData) -> Result<(), anyhow::Error> {
-        let mut message = cyberrc::CyberRcMessage::default();
-        message.r#type = cyberrc::cyber_rc_message::MessageType::RcData as i32;
-        data.arm = 32767;
-        message.payload = data.encode_to_vec();
-        let buffer = message.encode_length_delimited_to_vec();
+    pub fn write(&mut self, message: CyberRCMessageType) -> Result<(), anyhow::Error> {
+        let mut channel_values_count = 0;
+        let mut wrapper = CyberRcMessage {
+            channel_values_count: 4,
+            r#type: match message {
+                CyberRCMessageType::RcData(_) => cyber_rc_message::MessageType::RcData as i32,
+                CyberRCMessageType::PpmUpdate(_) => cyber_rc_message::MessageType::PpmUpdate as i32,
+            },
+            payload: match message {
+                CyberRCMessageType::RcData(mut data) => {
+                    data.arm = 32767;
+                    data.encode_to_vec()
+                }
+                CyberRCMessageType::PpmUpdate(ref data) => {
+                    // TODO: check for valid line number
+                    channel_values_count = data.channel_values.len() as i32;
+                    data.encode_to_vec()
+                }
+            },
+        };
+        wrapper.channel_values_count = channel_values_count;
+        let buffer = wrapper.encode_length_delimited_to_vec();
         self.serial_port
             .write_all(&buffer)
             .map_err(|e| anyhow::anyhow!(e))
