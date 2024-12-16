@@ -7,7 +7,7 @@
 // When operating in debug mode, you must ensure that the debugging code is
 // actively clearing from the buffer, as there is currently no check on this
 // end.
-#define DEBUG
+// #define DEBUG
 
 unsigned long now, previous;
 const int ledPin = 13;
