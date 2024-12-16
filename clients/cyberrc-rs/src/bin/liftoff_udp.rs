@@ -10,10 +10,15 @@ use tokio::time::{sleep, Duration};
 #[binrw]
 #[br(little)]
 #[derive(Debug)]
-struct LiftoffPacket {
+pub struct LiftoffPacket {
     timestamp: f32,
+    // x, y, z
     position: [f32; 3],
+    // x, y, z, w
     attitude: [f32; 4],
+    // pitch, roll, yaw - q, p, r
+    gyro: [f32; 3],
+    // throttle, yaw, pitch, roll
     input: [f32; 4],
     motor_num: u8,
     #[br(count = motor_num)]
@@ -122,50 +127,39 @@ async fn feedback_loop(
     address: &str,
     data_lock: Arc<Mutex<Option<LiftoffPacket>>>,
 ) -> anyhow::Result<()> {
-    let mut current_wait = Duration::from_secs(0);
-    let mut delay = Duration::from_secs(2);
-    let max_wait = Duration::from_secs(60 * 60 * 15);
-    let max_delay = Duration::from_secs(30);
-
+    let mut count = 0;
+    let mut total_elapsed = Duration::from_secs(0);
     loop {
+        let start = std::time::Instant::now();
         let mut buf = [0; 128];
         match UdpSocket::bind(address) {
             Ok(socket) => {
                 // println!("Bound to address: {}", address);
                 socket.set_read_timeout(Some(Duration::from_secs(15)))?;
-                current_wait = Duration::from_secs(0);
-                delay = Duration::from_secs(1);
-                match socket.recv_from(&mut buf) {
-                    Ok((len, _)) => {
+                match socket.recv(&mut buf) {
+                    Ok(len) => {
                         let mut cursor = std::io::Cursor::new(&buf[..len]);
-                        // println!("Buffer length: {:?}", buf);
                         // TODO: more robust handling of packet parsing errors during resets
                         let sample =
                             LiftoffPacket::read(&mut cursor).expect("Failed to read LiftoffPacket");
-                        // println!("Received data: {:?}", sample);
                         let mut data_lock = data_lock.lock().await;
                         *data_lock = Some(sample);
                     }
                     Err(e) => {
                         println!("Failed to receive data: {}", e);
-                        if current_wait >= max_wait {
-                            println!("Failed to receive data on bound address: {}", e);
-                            return Err(anyhow::anyhow!("Bind loop exceeded max wait time"));
-                        }
-                        current_wait += delay;
-                        sleep(
-                            delay + Duration::from_millis((rand::random::<f64>() * 1000.0) as u64),
-                        )
-                        .await;
-                        delay = (delay * 2).min(max_delay);
-                        // break;
                     }
                 }
             }
-            Err(e) => {
+            Err(_) => {
                 return Err(anyhow::anyhow!("Bind loop exceeded max wait time"));
             }
         }
+        total_elapsed += start.elapsed();
+        count += 1;
+        if count == 2000 {
+            break;
+        }
     }
+    println!("Avg loop time: {:?}", total_elapsed / count);
     Ok(())
 }

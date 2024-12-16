@@ -185,11 +185,11 @@ async fn read_feedback(port: &mut dyn SerialPort) {
 pub fn write_controller(
     writer: &mut dyn SerialPort,
     channel: Controls,
-    channel_values: &mut Vec<i32>,
     value: i32,
 ) -> Result<(), anyhow::Error> {
     let mut message = cyberrc::CyberRcMessage::default();
     let mut controller_data = cyberrc::PpmUpdateAll::default();
+    let mut channel_values = [1500, 1500, 1000, 1500];
     match channel {
         Controls::Aileron => {
             channel_values[0] = value;
@@ -207,7 +207,7 @@ pub fn write_controller(
     channel_values.iter().for_each(|value| {
         println!("Controller channel {}", value);
     });
-    controller_data.channel_values = channel_values.clone();
+    // controller_data.channel_values = channel_values.clone();
 
     message.r#type = cyberrc::cyber_rc_message::MessageType::PpmUpdate as i32;
     message.channel_values_count = controller_data.channel_values.len() as i32;
