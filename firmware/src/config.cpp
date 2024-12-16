@@ -18,7 +18,7 @@ uint8_t SERIAL_WRITE_BUFFER[4096];
 /// @brief Setup the serial port for communication
 void setup_serial()
 {
-    Serial1.begin(230400);
+    Serial1.begin(460800);
     Serial1.addMemoryForRead(&SERIAL_READ_BUFFER, sizeof(SERIAL_READ_BUFFER));
     Serial1.addMemoryForWrite(&SERIAL_WRITE_BUFFER, sizeof(SERIAL_WRITE_BUFFER));
     Serial1.flush();
