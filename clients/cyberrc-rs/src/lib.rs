@@ -24,7 +24,7 @@ pub struct Writer {
     pub baud_rate: u32,
 }
 
-enum CyberRCMessageType {
+pub enum CyberRCMessageType {
     RcData(cyberrc::RcData),
     PpmUpdate(cyberrc::PpmUpdateAll),
 }
@@ -76,6 +76,8 @@ mod tests {
     use serialport::{ClearBuffer, DataBits, FlowControl, Parity, StopBits};
     use std::io::{self, Read, Write};
     use std::time::Duration;
+
+    use crate::CyberRCMessageType;
 
     pub struct MockSerialPort {
         // Fields to store internal state or expected behavior
@@ -244,8 +246,8 @@ mod tests {
             serial_port: Box::new(port),
             baud_rate: 9600,
         };
-        let mut message = super::cyberrc::RcData::default();
-        let res = writer.write(&mut message);
+        let message = super::cyberrc::RcData::default();
+        let res = writer.write(CyberRCMessageType::RcData(message));
         assert!(res.is_ok());
     }
 }
