@@ -18,7 +18,7 @@ typedef struct
 {
   int type;
   u_int8_t channel_values_count;
-  u_int32_t channel_values[MAX_NUM_CHANNELS];
+  u_int32_t channel_values[PPM_CHANNELS];
 
   union
   {
@@ -30,7 +30,7 @@ typedef struct
 typedef struct
 {
   u_int8_t channel_values_count;
-  u_int32_t channel_values[MAX_NUM_CHANNELS];
+  u_int32_t channel_values[PPM_CHANNELS];
 } PPMPayload;
 
 // Message Wrapper

@@ -22,9 +22,11 @@ const int JoyMax = 1500;
 
 uint8_t buffer[255];
 MessageWrapper message_wrapper;
-PPMGenerator ppm_output(ppm_output_pins[0], channel_values[0], MAX_NUM_CHANNELS);
 
-static uint32_t control_defaults[4] = {1500, 1500, 1000, 1500};
+// PPMGenerator<PPM_CHANNELS> ppm_output(ppm_output_pins[0], channel_values,
+// PPM_CHANNELS);
+PPMGenerator<PPM_CHANNELS> ppm_output(ppm_output_pins[0], channel_values,
+                                      PPM_CHANNELS, 10000, 300);
 
 void toggleLED() {
   ledState = !ledState;           // Toggle LED state
@@ -34,9 +36,10 @@ void toggleLED() {
 void setup() {
   setup_serial();
   initialize_ppm();
+
   // Safety Pin Setup
   // pinMode(SafetyPin, INPUT_PULLUP);
-  pinMode(ledPin, OUTPUT);          // Configure LED pin as output
+  pinMode(ledPin, OUTPUT); // Configure LED pin as output
   // xInput Setup
   Serial1.flush();
   XInput.setAutoSend(false);
@@ -103,7 +106,7 @@ void loop() {
   if (!pb_decode(&stream, cyberrc_CyberRCMessage_fields, &message)) {
     // Error decoding the inner message
 #ifdef DEBUG
-  Serial1.println("Failed to decode inner type");
+    Serial1.println("Failed to decode inner type");
 #endif
     return;
   }
@@ -155,7 +158,7 @@ void loop() {
     uint32_t *channel_values = message_wrapper.channel_values;
     if (line > NUM_LINES) {
 #ifdef DEBUG
-    Serial1.printf("Line %d is out of bounds\r\n", line);
+      Serial1.printf("Line %d is out of bounds\r\n", line);
 #endif
       return;
     }
