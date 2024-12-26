@@ -7,7 +7,7 @@
 // When operating in debug mode, you must ensure that the debugging code is
 // actively clearing from the buffer, as there is currently no check on this
 // end.
-// #define DEBUG
+#define DEBUG
 
 unsigned long now, previous;
 const int ledPin = 13;
@@ -27,19 +27,22 @@ MessageWrapper message_wrapper;
 // PPM_CHANNELS);
 PPMGenerator<PPM_CHANNELS> ppm_output(ppm_output_pins[0], channel_values,
                                       PPM_CHANNELS, 10000, 300);
-
 void toggleLED() {
   ledState = !ledState;           // Toggle LED state
   digitalWrite(ledPin, ledState); // Update the LED pin
 }
 
 void setup() {
-  setup_serial();
-  initialize_ppm();
-
-  // Safety Pin Setup
-  // pinMode(SafetyPin, INPUT_PULLUP);
   pinMode(ledPin, OUTPUT); // Configure LED pin as output
+  setup_serial();
+#ifdef DEBUG
+  Serial1.println("Serial Initialized");
+#endif  // Safety Pin Setup
+  initialize_ppm();
+#ifdef DEBUG
+  Serial1.printf("Initialized PPM %d\n", ppm_output_pins[0]);
+#endif  // Safety Pin Setup
+  // pinMode(SafetyPin, INPUT_PULLUP);
   // xInput Setup
   Serial1.flush();
   XInput.setAutoSend(false);
