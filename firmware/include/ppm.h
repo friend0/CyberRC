@@ -74,8 +74,11 @@ PPMGenerator<N>* PPMGenerator<N>::instancePtr = nullptr;
 // Constructor
 template <size_t N>
 PPMGenerator<N>::PPMGenerator(const uint8_t outputPin, uint32_t (&channels)[N], uint8_t numCh, uint32_t frameLen, uint32_t pulseW ) {
+    this->pin = outputPin;
+    this->numChannels = numCh;
     this->frameLength = frameLen;
     this->pulseWidth = pulseW;
+    this->channelValues = channels;
     remainingFrameTime = frameLength;
     instancePtr = this; // Set the static instance pointer
 }
@@ -116,7 +119,6 @@ void PPMGenerator<N>::handleTimer() {
         digitalWrite(pin, LOW);
         timer.update(pulseWidth); // Set the timer for the pulse width
         isPulse = false;
-
         // Deduct the pulse width from the remaining frame time
         remainingFrameTime -= pulseWidth;
     } else {
