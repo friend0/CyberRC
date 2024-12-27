@@ -25,8 +25,8 @@ MessageWrapper message_wrapper;
 
 // PPMGenerator<PPM_CHANNELS> ppm_output(ppm_output_pins[0], channel_values,
 // PPM_CHANNELS);
-PPMGenerator<PPM_CHANNELS> ppm_output(ppm_output_pins[0], channel_values,
-                                      PPM_CHANNELS, 10000, 300);
+PPMGenerator<NUM_PPM_CHANNELS> ppm_output(ppm_output_pins[0], channel_values,
+                                      NUM_PPM_CHANNELS, 10000, 300, RISING);
 void toggleLED() {
   ledState = !ledState;           // Toggle LED state
   digitalWrite(ledPin, ledState); // Update the LED pin

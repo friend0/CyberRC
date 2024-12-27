@@ -13,7 +13,7 @@
 
 // todo: PPM library does not make this configurable out of the box
 // you will need to update the #define in PulsePosition.h until this is implemented as a new feature
-#define PPM_CHANNELS 4 // set the number of channels per line
+#define NUM_PPM_CHANNELS 4 // set the number of channels per line
 
 #if defined(ARDUINO_TEENSY31) || defined(ARDUINO_TEENSY32)
 extern const uint8_t ppm_output_pins[8];
@@ -23,8 +23,8 @@ extern const uint8_t ppm_output_pins[10];
     #error "Unsupported board"
 #endif
 
-extern PPMGenerator<PPM_CHANNELS> ppm_output;
-extern u_int32_t channel_values[PPM_CHANNELS];
+extern PPMGenerator<NUM_PPM_CHANNELS> ppm_output;
+extern u_int32_t channel_values[NUM_PPM_CHANNELS];
 
 void setup_serial();
 
