@@ -10,7 +10,7 @@ const uint8_t ppm_output_pins[10] = {6, 9, 10, 11, 12, 13, 14, 15, 18, 19};
 #endif
 
 // PPMGenerator<PPM_CHANNELS> ppm_output = PPMGenerator<PPM_CHANNELS>(ppm_output_pins[0], channel_values, PPM_CHANNELS, 10000, 300);
-uint32_t channel_values[PPM_CHANNELS];
+uint32_t channel_values[NUM_PPM_CHANNELS];
 
 uint8_t SERIAL_READ_BUFFER[32768];
 uint8_t SERIAL_WRITE_BUFFER[4096];
@@ -41,7 +41,7 @@ static uint32_t control_defaults[4] = {1500, 1500, 1000, 1500};
 /// @brief Initialize the PPM output
 void initialize_ppm()
 {  
-    for (uint8_t i = 0; i < PPM_CHANNELS; i++)
+    for (uint8_t i = 0; i < NUM_PPM_CHANNELS; i++)
     {
         ppm_output.updateChannel(i, control_defaults[i]);
     }
