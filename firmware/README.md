@@ -25,8 +25,6 @@ I'm using Platformio on VSCode. Platformio should pick up the config in this rep
 You will need to install the Xinput boards package for teensy following the instructions in the repository.
 Note that you will need to locate the directory of the teensy board files used by platformio, which will be distinct from those installed by the Arduino IDE. Find it [here](https://github.com/dmadison/ArduinoXInput_Teensy).
 
-On top of this descriptor, you will need to add configuration for the second hardware serial port, as the first hardware serial port will be used for the gamepad outputs.
-
 I'm including the complete `usb_desc.h` entry here:
 
 ```
@@ -60,6 +58,7 @@ I'm including the complete `usb_desc.h` entry here:
   #define ENDPOINT6_CONFIG ENDPOINT_TRANSMIT_INTERRUPT
 #endif
 ```
+
 In normal Arduino development, you select the desired mode of USB operation through the editor. With platformio, this configuration is set in the platformio.ini. By default, platformio filters these build configurations to a default list that is populated to the stock options. You will need to add `USB_XINPUT` to the `BUILTIN_USB_FLAGS`
 in `$HOME/.platformio/platforms/teensy/builder/frameworks/arduino.py` (Linux path).
 
@@ -67,10 +66,11 @@ in `$HOME/.platformio/platforms/teensy/builder/frameworks/arduino.py` (Linux pat
 By default, the Teensy doesn't come with a usb descriptor that enables Xinput.
 There are some common adaptations used to add an Xinput descriptor, but it does not enable additional hardware serial. Some manual interventions are required to make this work.
 
-# Rebuilding Protobufs
+# Building the Protobufs *Needed for manual compilation only*
+
 Protobufs for the Teensy should be rebuilt automatically by PlatformIO.
 The Teensy implementation in this case relies on `nanopb` which uses it's own protobuf compiler implementation.
 
-To rebuild the protobufs for the Python GUI test client, install `protoc` locally, navigate to `src/protos` and run:
+If you need to rebuild the protobufs for the any of the test clients, install `protoc` locally, navigate to `src/protos` and run, for example:
 
 `$ protoc --python_out=../../test_client --mypy_out=../../test_client RCData.proto`
