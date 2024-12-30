@@ -1,15 +1,16 @@
-# TeensyCyberRC
+# CyberRC Firmware
 
-The embedded code for CyberRC takes Protobuf encoded messages over Serial as input, and outputs gamepad commands.
-This allows controllers to send outputs to video games or other applications that require game pad or joystick inputs. The primary use case is the  development of control algorithms, and training ML policies.
+The CyberRC Firmware runs onboard a Teensy microcontroller, and can emulate a gamped or joystick, as well as act as an RC trainer output device.
+The firmware for CyberRC takes Protobuf encoded messages over Serial as input, and output control commands as an emulated Xbox controller, or through a PPM signal that is usable by almost any RC radio for controlling vehicles.
 
-If CyberRC is the virtual interface from an autonomous controller, then TeensyCyberRC is the physical interface.
-TeensyCyberRC runs onboard a Teensy microcontroller, and emulates a gamepad or joystick.
+CyberRC is the "server" counterpart to the client libraries in this repo.
+Using a client library, an autonomous controller can send commands to video games or real drones. 
+The primary use case is the  development of control algorithms.
 
-
-
-# Teensy Support
+## Teensy Version Support
 CyberRC has been developed on the Teensy 4.1, but should be portable to the 4.0, and likely portable to 3.6 and 3.2.
+
+### TODO: Compatibility matrix
 
 # Dependencies and Development
 
