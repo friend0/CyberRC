@@ -52,29 +52,13 @@ I'm including the complete `usb_desc.h` entry here:
   #define XINPUT_TX_ENDPOINT	1
   #define XINPUT_TX_SIZE 20
   #define CONFIG_DESC_SIZE 153
-
-  #define CDC_ACM_SIZE          16
-  #define CDC_RX_SIZE_480       512
-  #define CDC_TX_SIZE_480       512
-  #define CDC_RX_SIZE_12        64
-  #define CDC_TX_SIZE_12        64
-  #define CDC2_STATUS_INTERFACE 2       // SerialUSB1
-  #define CDC2_DATA_INTERFACE   3
-  #define CDC2_ACM_ENDPOINT     7
-  #define CDC2_RX_ENDPOINT      8
-  #define CDC2_TX_ENDPOINT      8
-
   #define ENDPOINT1_CONFIG ENDPOINT_TRANSMIT_INTERRUPT
   #define ENDPOINT2_CONFIG ENDPOINT_RECEIVE_INTERRUPT
   #define ENDPOINT3_CONFIG ENDPOINT_TRANSMIT_INTERRUPT
   #define ENDPOINT4_CONFIG ENDPOINT_RECEIVE_INTERRUPT
   #define ENDPOINT5_CONFIG ENDPOINT_TRANSMIT_INTERRUPT + ENDPOINT_RECEIVE_INTERRUPT
   #define ENDPOINT6_CONFIG ENDPOINT_TRANSMIT_INTERRUPT
-
-  #define ENDPOINT7_CONFIG	ENDPOINT_RECEIVE_UNUSED + ENDPOINT_TRANSMIT_INTERRUPT
-  #define ENDPOINT8_CONFIG	ENDPOINT_RECEIVE_BULK + ENDPOINT_TRANSMIT_BULK
 #endif
-
 ```
 In normal Arduino development, you select the desired mode of USB operation through the editor. With platformio, this configuration is set in the platformio.ini. By default, platformio filters these build configurations to a default list that is populated to the stock options. You will need to add `USB_XINPUT` to the `BUILTIN_USB_FLAGS`
 in `$HOME/.platformio/platforms/teensy/builder/frameworks/arduino.py` (Linux path).
