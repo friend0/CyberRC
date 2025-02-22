@@ -61,15 +61,13 @@ jobs:
           ARDUINO_PY="$HOME/.platformio/platforms/teensy/builder/frameworks/arduino.py"
           XINPUT_USB_ENTRY='    "USB_XINPUT",'
 
-          # Check if XINPUT_USB is already present to avoid duplication
           if ! grep -q '"USB_XINPUT"' "$ARDUINO_PY"; then
-            # Insert "USB_XINPUT" before the closing parenthesis ')'
-            sed -i '/BUILTIN_USB_FLAGS = (/ { :a; N; /)/! ba; s/)/    "USB_XINPUT",\n)/ }' "$ARDUINO_PY"
+            # Ensure the last existing entry in BUILTIN_USB_FLAGS has a comma, then insert USB_XINPUT
+            sed -i '/BUILTIN_USB_FLAGS = (/ { :a; N; /)/! ba; s/\(\s*"[^"]*"\)\s*)/\1,\n    "USB_XINPUT"\n)/ }' "$ARDUINO_PY"
             echo "XINPUT_USB added to BUILTIN_USB_FLAGS."
           else
             echo "XINPUT_USB already exists in BUILTIN_USB_FLAGS."
           fi
-          cat $ARDUINO_PY
 
       - name: Build firmware
         run: pio run
