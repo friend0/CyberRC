@@ -17,6 +17,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Enable SSH Debugging
+        uses: action-matrix/debugger@v3
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
