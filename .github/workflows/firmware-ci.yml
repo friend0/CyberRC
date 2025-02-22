@@ -69,6 +69,7 @@ jobs:
           else
             echo "XINPUT_USB already exists in BUILTIN_USB_FLAGS."
           fi
+          cat $ARDUINO_PY
 
       - name: Build firmware
         run: pio run
