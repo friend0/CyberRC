@@ -63,11 +63,23 @@ I'm including the complete `usb_desc.h` entry here:
 In normal Arduino development, you select the desired mode of USB operation through the editor. With platformio, this configuration is set in the platformio.ini. By default, platformio filters these build configurations to a default list that is populated to the stock options. You will need to add `USB_XINPUT` to the `BUILTIN_USB_FLAGS`
 in `$HOME/.platformio/platforms/teensy/builder/frameworks/arduino.py` (Linux path).
 
-# Configuring the Teensy for Xinput and HW Serial
+# Configuration
+## Building the firmware in Debug mode
+Serial output is extremely usefule for troubleshooting errors with the firmware without a JTAG or similar device.
+On the other hand, serial output can affect the timing of operations in situations where tight timing constraints are desired. For this reason, we include a `#define DEBUG` variable that is commented by default in `config.h`.
+To enable it, simply uncomment this line and rebuild the firmware.
+
+## Building the Firmware for Multiple PPM Output Lines 
+In the base case for interfacing with vehicles using PPM, we use one line of PPM output. 
+For the multi-vehicle case - up to 8 outputs for Teensy3, and 10 for Teensy4 - you will need to configure and build the software for the desired number of PPM lines. In `config.h`, change `#define NUM_LINES 1` to match the desired number of output lines.
+
+In your client code, you will set up some addressing scheme corresponding vehicles with some line number, and then include that line number in the PPM command message. Refer to the client library implementations for details on how to do this.
+
+## Configuring the Teensy for Xinput and HW Serial
 By default, the Teensy doesn't come with a usb descriptor that enables Xinput.
 There are some common adaptations used to add an Xinput descriptor, but it does not enable additional hardware serial. Some manual interventions are required to make this work.
 
-# Building the Protobufs *Needed for manual compilation only*
+## Building the Protobufs *Needed for manual compilation only*
 
 Protobufs for the Teensy should be rebuilt automatically by PlatformIO.
 The Teensy implementation in this case relies on `nanopb` which uses it's own protobuf compiler implementation.
