@@ -56,6 +56,20 @@ jobs:
           cp -r $SOURCE_PATH/teensy3/* "$TEENSY_PATH/teensy3/"
           cp -r $SOURCE_PATH/teensy4/* "$TEENSY_PATH/teensy4/"
 
+      - name: Modify arduino.py to Add XINPUT_USB
+        run: |
+          ARDUINO_PY="$HOME/.platformio/platforms/teensy/builder/frameworks/arduino.py"
+          XINPUT_USB_ENTRY='    "USB_XINPUT",'
+
+          # Check if XINPUT_USB is already present to avoid duplication
+          if ! grep -q '"USB_XINPUT"' "$ARDUINO_PY"; then
+            # Insert "USB_XINPUT" before the closing parenthesis ')'
+            sed -i '/BUILTIN_USB_FLAGS = (/ { :a; N; /)/! ba; s/)/    "USB_XINPUT",\n)/ }' "$ARDUINO_PY"
+            echo "XINPUT_USB added to BUILTIN_USB_FLAGS."
+          else
+            echo "XINPUT_USB already exists in BUILTIN_USB_FLAGS."
+          fi
+
       - name: Build firmware
         run: pio run
         working-directory: firmware
