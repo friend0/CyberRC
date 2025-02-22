@@ -1,0 +1,42 @@
+name: Build and Test Firmware
+
+on:
+  push:
+    paths:
+      - "firmware/**" # Only trigger if files in the firmware directory change
+  pull_request:
+    paths:
+      - "firmware/**" # Only trigger if files in the firmware directory change
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Cache PlatformIO dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.platformio
+          key: platformio-${{ runner.os }}-${{ hashFiles('firmware/platformio.ini') }}
+          restore-keys: |
+            platformio-${{ runner.os }}-
+
+      - name: Build firmware
+        run: pio run
+        working-directory: firmware
+
+      - name: Run PlatformIO tests (if applicable)
+        run: pio test
+        working-directory: firmware
