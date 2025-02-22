@@ -39,6 +39,22 @@ jobs:
           restore-keys: |
             platformio-${{ runner.os }}-
 
+      - name: Get firmware deps
+        run: pio pkg install
+        working-directory: firmware
+
+      - name: Clone ArduinoXInput_Teensy Repository
+        run: |
+          git clone https://github.com/dmadison/ArduinoXInput_Teensy.git /tmp/ArduinoXInput_Teensy
+
+      - name: Replace Teensy Core Files
+        run: |
+          TEENSY_PATH="$HOME/.platformio/packages/framework-arduinoteensy/cores"
+          echo "Replacing Teensy core directories..."
+          rm -rf "$TEENSY_PATH/teensy3" "$TEENSY_PATH/teensy4"
+          cp -r /tmp/ArduinoXInput_Teensy/teensy3 "$TEENSY_PATH/"
+          cp -r /tmp/ArduinoXInput_Teensy/teensy4 "$TEENSY_PATH/"
+
       - name: Build firmware
         run: pio run
         working-directory: firmware
