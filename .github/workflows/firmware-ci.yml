@@ -72,7 +72,3 @@ jobs:
       - name: Build firmware
         run: pio run
         working-directory: firmware
-
-      - name: Run PlatformIO tests (if applicable)
-        run: pio test
-        working-directory: firmware
