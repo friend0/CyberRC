@@ -9,7 +9,7 @@
 #define DEBUG
 // provide the number of PPMs to be used
 // as of 7/18/24 we are only using 1 PPM
-#define NUM_LINES 1
+#define NUM_LINES 2  // Change this to the desired number of lines
 
 // todo: PPM library does not make this configurable out of the box
 // you will need to update the #define in PulsePosition.h until this is implemented as a new feature
@@ -23,11 +23,10 @@ extern const uint8_t ppm_output_pins[10];
     #error "Unsupported board"
 #endif
 
-extern PPMGenerator<NUM_PPM_CHANNELS> ppm_output;
-extern u_int32_t channel_values[NUM_PPM_CHANNELS];
+extern PPMGenerator<NUM_PPM_CHANNELS> *ppm_output[NUM_LINES];
+extern u_int32_t channel_values[NUM_LINES][NUM_PPM_CHANNELS];
 
 void setup_serial();
-
 void initialize_ppm();
 
 #endif // CONFIG_H
