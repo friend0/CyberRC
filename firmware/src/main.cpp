@@ -23,10 +23,6 @@ const int JoyMax = 1500;
 uint8_t buffer[255];
 MessageWrapper message_wrapper;
 
-// PPMGenerator<PPM_CHANNELS> ppm_output(ppm_output_pins[0], channel_values,
-// PPM_CHANNELS);
-PPMGenerator<NUM_PPM_CHANNELS> ppm_output(ppm_output_pins[0], channel_values,
-                                      NUM_PPM_CHANNELS, 12500, 300, FALLING);
 void toggleLED() {
   ledState = !ledState;           // Toggle LED state
   digitalWrite(ledPin, ledState); // Update the LED pin
@@ -37,11 +33,11 @@ void setup() {
   setup_serial();
 #ifdef DEBUG
   Serial1.println("Serial Initialized");
-#endif  // Safety Pin Setup
+#endif // Safety Pin Setup
   initialize_ppm();
 #ifdef DEBUG
   Serial1.printf("Initialized PPM %d\n", ppm_output_pins[0]);
-#endif  // Safety Pin Setup
+#endif // Safety Pin Setup
   // pinMode(SafetyPin, INPUT_PULLUP);
   // xInput Setup
   Serial1.flush();
@@ -159,14 +155,16 @@ void loop() {
     ppm_data = message_wrapper.payload.ppm_data;
     uint32_t line = ppm_data.line;
     uint32_t *channel_values = message_wrapper.channel_values;
-    if (line > NUM_LINES) {
+    if (line <= 0 || line > NUM_LINES) {
 #ifdef DEBUG
-      Serial1.printf("Line %d is out of bounds\r\n", line);
+      Serial1.printf("Line %d is out of bounds. Please provide a line in the "
+                     "range [1-NUM_LINES]\r\n",
+                     line);
 #endif
       return;
     }
     for (uint8_t i = 0; i < message_wrapper.channel_values_count; i++) {
-      ppm_output.updateChannel(i, channel_values[i]);
+      ppm_output[line - 1]->updateChannel(i, channel_values[i]);
     }
   }
 }

@@ -1,0 +1,74 @@
+name: Build and Test Firmware
+
+on:
+  push:
+    paths:
+      - "firmware/**" # Only trigger if files in the firmware directory change
+  pull_request:
+    paths:
+      - "firmware/**" # Only trigger if files in the firmware directory change
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # - name: Install tmate
+      #   run: sudo apt-get install -y tmate
+      #
+      # - name: Start tmate session
+      #   run: tmate -F
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Cache PlatformIO dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.platformio
+          key: platformio-${{ runner.os }}-${{ hashFiles('firmware/platformio.ini') }}
+          restore-keys: |
+            platformio-${{ runner.os }}-
+
+      - name: Get firmware deps
+        run: pio pkg install
+        working-directory: firmware
+
+      - name: Clone ArduinoXInput_Teensy Repository
+        run: |
+          git clone https://github.com/dmadison/ArduinoXInput_Teensy.git /tmp/ArduinoXInput_Teensy
+
+      - name: Overwrite Teensy Core Files
+        run: |
+          TEENSY_PATH="$HOME/.platformio/packages/framework-arduinoteensy/cores"
+          SOURCE_PATH="/tmp/ArduinoXInput_Teensy/teensy/avr/cores"
+
+          echo "Copying XInput core files from $SOURCE_PATH to $TEENSY_PATH"
+          cp -r $SOURCE_PATH/teensy3/* "$TEENSY_PATH/teensy3/"
+          cp -r $SOURCE_PATH/teensy4/* "$TEENSY_PATH/teensy4/"
+
+      - name: Modify arduino.py to Add XINPUT_USB
+        run: |
+          ARDUINO_PY="$HOME/.platformio/platforms/teensy/builder/frameworks/arduino.py"
+          XINPUT_USB_ENTRY='    "USB_XINPUT",'
+
+          if ! grep -q '"USB_XINPUT"' "$ARDUINO_PY"; then
+            # Ensure the last existing entry in BUILTIN_USB_FLAGS has a comma, then insert USB_XINPUT
+            sed -i '/BUILTIN_USB_FLAGS = (/ { :a; N; /)/! ba; s/\(\s*"[^"]*"\)\s*)/\1,\n    "USB_XINPUT"\n)/ }' "$ARDUINO_PY"
+            echo "XINPUT_USB added to BUILTIN_USB_FLAGS."
+          else
+            echo "XINPUT_USB already exists in BUILTIN_USB_FLAGS."
+          fi
+
+      - name: Build firmware
+        run: pio run
+        working-directory: firmware
