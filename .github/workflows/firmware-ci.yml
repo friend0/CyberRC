@@ -17,8 +17,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Enable SSH Debugging
-        uses: action-matrix/debugger@v3
+      - name: Install tmate
+        run: sudo apt-get install -y tmate
+
+      - name: Start tmate session
+        run: tmate -F
 
       - name: Set up Python
         uses: actions/setup-python@v4
