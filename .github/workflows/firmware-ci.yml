@@ -47,13 +47,14 @@ jobs:
         run: |
           git clone https://github.com/dmadison/ArduinoXInput_Teensy.git /tmp/ArduinoXInput_Teensy
 
-      - name: Replace Teensy Core Files
+      - name: Overwrite Teensy Core Files
         run: |
           TEENSY_PATH="$HOME/.platformio/packages/framework-arduinoteensy/cores"
-          echo "Replacing Teensy core directories..."
-          rm -rf "$TEENSY_PATH/teensy3" "$TEENSY_PATH/teensy4"
-          cp -r /tmp/ArduinoXInput_Teensy/teensy3 "$TEENSY_PATH/"
-          cp -r /tmp/ArduinoXInput_Teensy/teensy4 "$TEENSY_PATH/"
+          SOURCE_PATH="/tmp/ArduinoXInput_Teensy/teensy/avr/cores"
+
+          echo "Copying XInput core files from $SOURCE_PATH to $TEENSY_PATH"
+          cp -r $SOURCE_PATH/teensy3/* "$TEENSY_PATH/teensy3/"
+          cp -r $SOURCE_PATH/teensy4/* "$TEENSY_PATH/teensy4/"
 
       - name: Build firmware
         run: pio run
