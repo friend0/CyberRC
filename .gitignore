@@ -1,9 +1,17 @@
 /target
+**/.cargo/
+**/.DS_store
+.direnv
+
 TeensyCyberRC/.vscode
-
 TeensyCyberRC/.vs/
-
 clients/cyberrc-rs/target/
-
 firmware/.vs/
 clients/cyberrc-rs/.cargo
+
+# CMake build artifacts
+CMakeCache.txt
+**/CMakeFiles/
+cmake_install.cmake
+Makefile
+

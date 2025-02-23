@@ -1,0 +1,51 @@
+cmake_minimum_required(VERSION 3.10)
+project(CyberRC_Cpp_Client CXX)
+
+# Set paths for Rust include and library directories
+set(RUST_PROJECT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../cyberrc-rs")
+set(INCLUDE_DIR "./include")
+set(RUST_LIB_DIR "${RUST_PROJECT_ROOT}/target/release")
+
+# Detect operating system and set the Rust shared library name
+if(APPLE)
+    set(RUST_LIB_NAME "libcyber_rc.dylib")
+elseif(UNIX)
+    set(RUST_LIB_NAME "libcyber_rc.so")
+elseif(WIN32)
+    set(RUST_LIB_NAME "cyberrc.dll")
+endif()
+
+# Add include directory for the generated C++ header
+include_directories(${INCLUDE_DIR})
+
+# Set C++ source files
+set(SOURCES src/main.cpp)
+
+# Create the executable
+add_executable(main ${SOURCES})
+
+# Custom target to build the Rust library
+add_custom_target(
+    rust_build
+    COMMAND cargo build --release
+    WORKING_DIRECTORY ${RUST_PROJECT_ROOT}
+    COMMENT "Building Rust shared library..."
+    VERBATIM
+)
+
+# Ensure Rust library is built before linking
+add_dependencies(main rust_build)
+
+# Link with the Rust shared library
+target_link_libraries(main "${RUST_LIB_DIR}/${RUST_LIB_NAME}")
+
+# Ensure Rust library is found at runtime
+if(APPLE OR UNIX)
+    set_target_properties(main PROPERTIES BUILD_RPATH "${RUST_LIB_DIR}")
+elseif(WIN32)
+    set_target_properties(main PROPERTIES LINK_DIRECTORIES "${RUST_LIB_DIR}")
+endif()
+
+# Enable C++ standard (adjust version as needed)
+set_target_properties(main PROPERTIES CXX_STANDARD 17)
+set_target_properties(main PROPERTIES CXX_STANDARD_REQUIRED ON)
