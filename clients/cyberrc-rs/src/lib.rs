@@ -1,11 +1,12 @@
 use cyberrc::{cyber_rc_message, CyberRcMessage};
 use prost::Message;
-use serialport::{SerialPort, SerialPortBuilder, SerialPortType};
+use serialport::SerialPort;
 use std::io::Write;
 use std::time::Duration;
 
 use mockall::{automock, predicate::*};
 pub mod constants;
+mod lib_ffi;
 
 pub mod cyberrc {
     include!(concat!(env!("OUT_DIR"), "/cyberrc.rs"));
