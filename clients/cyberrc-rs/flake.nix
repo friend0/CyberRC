@@ -19,6 +19,7 @@
         pkgs.cmake
         pkgs.rustup
         pkgs.zsh
+        pkgs.rust-cbindgen
       ];
 
       # Optionally, set environment variables
