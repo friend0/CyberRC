@@ -65,7 +65,8 @@ I'm including the complete `usb_desc.h` entry here:
 #endifif
 ```
 
-In normal Arduino development, you select the desired mode of USB operation through the editor. With platformio, this configuration is set in the platformio.ini. By default, platformio filters these build configurations to a default list that is populated to the stock options. You will need to add `USB_XINPUT` to the `BUILTIN_USB_FLAGS`
+In normal Arduino development, you select the desired mode of USB operation through the editor.
+With platformio, this configuration is set in the platformio.ini. By default, platformio filters these build configurations to a default list that is populated to the stock options. You will need to add `USB_XINPUT` to the `BUILTIN_USB_FLAGS`
 in `$HOME/.platformio/platforms/teensy/builder/frameworks/arduino.py` (Linux path).
 
 If you get lost implementing these steps, you should refer to the github workflow for this repo at `.github/workflows/firmware-ci.yml`. This workflow automates the Xinput installation for Linux, and should e identical on MacOS.
@@ -74,7 +75,7 @@ If you get lost implementing these steps, you should refer to the github workflo
 
 ## Building the firmware in Debug mode
 
-Serial output is extremely usefule for troubleshooting errors with the firmware without a JTAG or similar device.
+Serial output is extremely useful for troubleshooting errors with the firmware without a JTAG or similar device.
 On the other hand, serial output can affect the timing of operations in situations where tight timing constraints are desired. For this reason, we include a `#define DEBUG` variable that is commented by default in `config.h`.
 To enable it, simply uncomment this line and rebuild the firmware.
 
