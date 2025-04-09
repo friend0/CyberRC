@@ -31,36 +31,38 @@ Note that you will need to locate the directory of the teensy board files used b
 
 I'm including the complete `usb_desc.h` entry here:
 
-```
+```c
 #elif defined(USB_XINPUT)
+#end#elif defined(USB_XINPUT)
+  #define DEVICE_CLASS	0xFF
+  #define DEVICE_SUBCLASS	0xFF
+  #define DEVICE_PROTOCOL	0xFF
+  #define BCD_DEVICE	0x0114
+  #define DEVICE_ATTRIBUTES 0xA0
+  #define DEVICE_POWER	0xFA
   #define VENDOR_ID		0x045e
   #define PRODUCT_ID		0x028e
   #define MANUFACTURER_NAME	{0x00A9,'M','i','c','r','o','s','o','f','t'}
   #define MANUFACTURER_NAME_LEN	10
   #define PRODUCT_NAME		{'C','o','n','t','r','o','l','l','e','r'}
   #define PRODUCT_NAME_LEN	10
-  #define DEVICE_CLASS 0xFF
-  #define DEVICE_SUBCLASS 0xFF
-  #define DEVICE_PROTOCOL 0xFF
-  #define BCD_DEVICE 0x0114
-  #define DEVICE_ATTRIBUTES 0xA0
-  #define DEVICE_POWER	0xFA
-  #define EP0_SIZE		64
-  #define NUM_ENDPOINTS         6
-  #define NUM_INTERFACE		4
-  #define XINPUT_INTERFACE 0
+  #define EP0_SIZE	8
+  #define NUM_ENDPOINTS	6
+  #define NUM_USB_BUFFERS	24
+  #define NUM_INTERFACE	4
+  #define XINPUT_INTERFACE	0
   #define XINPUT_RX_ENDPOINT	2
   #define XINPUT_RX_SIZE 8
   #define XINPUT_TX_ENDPOINT	1
   #define XINPUT_TX_SIZE 20
   #define CONFIG_DESC_SIZE 153
-  #define ENDPOINT1_CONFIG ENDPOINT_TRANSMIT_INTERRUPT
-  #define ENDPOINT2_CONFIG ENDPOINT_RECEIVE_INTERRUPT
-  #define ENDPOINT3_CONFIG ENDPOINT_TRANSMIT_INTERRUPT
-  #define ENDPOINT4_CONFIG ENDPOINT_RECEIVE_INTERRUPT
-  #define ENDPOINT5_CONFIG ENDPOINT_TRANSMIT_INTERRUPT + ENDPOINT_RECEIVE_INTERRUPT
-  #define ENDPOINT6_CONFIG ENDPOINT_TRANSMIT_INTERRUPT
-#endif
+  #define ENDPOINT1_CONFIG ENDPOINT_TRANSMIT_ONLY
+  #define ENDPOINT2_CONFIG ENDPOINT_RECEIVE_ONLY
+  #define ENDPOINT3_CONFIG ENDPOINT_TRANSMIT_ONLY
+  #define ENDPOINT4_CONFIG ENDPOINT_RECEIVE_ONLY
+  #define ENDPOINT5_CONFIG ENDPOINT_TRANSMIT_AND_RECEIVE
+  #define ENDPOINT6_CONFIG ENDPOINT_TRANSMIT_ONLY
+#endifif
 ```
 
 In normal Arduino development, you select the desired mode of USB operation through the editor. With platformio, this configuration is set in the platformio.ini. By default, platformio filters these build configurations to a default list that is populated to the stock options. You will need to add `USB_XINPUT` to the `BUILTIN_USB_FLAGS`
