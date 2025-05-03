@@ -34,9 +34,6 @@ void setup_serial()
     }
 }
 
-// Default control values: mid stick for control surfaces, zero throttle
-static uint32_t control_defaults[4] = {1500, 1500, 1000, 1500};
-
 /// @brief Initialize the PPM output
 void initialize_ppm()
 {  
