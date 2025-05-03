@@ -19,7 +19,7 @@ use cyberrc::RcData;
 pub struct Args {
     #[arg(short, long)]
     pub port: Option<String>,
-    #[arg(short, long, default_value = "230400")]
+    #[arg(short, long, default_value = "460800")]
     pub baud_rate: u32,
 }
 
