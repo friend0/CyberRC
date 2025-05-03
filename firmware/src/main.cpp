@@ -29,6 +29,7 @@ void toggleLED() {
 }
 
 void setup() {
+  previous = millis();
   pinMode(ledPin, OUTPUT); // Configure LED pin as output
   setup_serial();
 #ifdef DEBUG
@@ -46,12 +47,35 @@ void setup() {
 }
 
 void loop() {
-  static long last_time = 0;
+  static long last_blink = 0;
   while (!Serial1.available()) {
-    if (millis() - last_time > 500) {
+    now = millis();
+    if (now - last_blink > 500) {
       toggleLED();
-      last_time = millis();
+      last_blink = millis();
     }
+    // Hoodrat watchdog timer - set outputs to zero if no data has been received
+    // in the last 5 seconds
+    if (now - previous > 5000) {
+      // Set PPMs to "zero"
+      for (uint8_t i = 0; i < NUM_LINES; i++) {
+        for (uint8_t j = 0; j < NUM_PPM_CHANNELS; j++) {
+          ppm_output[i]->updateChannel(j, control_defaults[j]);
+        }
+        ppm_output[i]->begin();
+      }
+
+      // TODO: add default values to config header
+      // Set XInput to "zero"
+      XInput.setJoystick(JOY_LEFT, 0, 32767);
+      XInput.setJoystick(JOY_RIGHT, 0, 0);
+      XInput.send();
+    }
+  }
+
+  if (Serial1.available()) {
+    ledState = false;
+    digitalWrite(ledPin, ledState);
   }
 
   CLEAR_BUFFER(buffer);
@@ -108,6 +132,9 @@ void loop() {
     Serial1.println("Failed to decode inner type");
 #endif
     return;
+  } else {
+    // Succesfully received some message, reset `previous` watchdog timer
+    previous = millis();
   }
 
   // Based on the type of message, determine what interface to write output to.
