@@ -87,7 +87,8 @@ CyberRC has been developed on the Teensy 4.1, but should be portable to the 4.0,
           "USB_MTPDISK_SERIAL",
           "USB_XINPUT"
 
-      )```
+      )
+      ```
 
 4. **Clone and Import Project**:
    - Clone this repository: `git clone https://github.com/friend0/CyberRC.git`
