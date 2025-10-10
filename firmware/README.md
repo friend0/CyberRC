@@ -1,6 +1,6 @@
 # CyberRC Firmware
 
-The CyberRC Firmware runs onboard a Teensy microcontroller, and can emulate a gamped or joystick, as well as act as an RC trainer output device.
+The CyberRC Firmware runs onboard a Teensy microcontroller, and can emulate a gamepad or joystick, as well as act as an RC trainer output device.
 The firmware for CyberRC takes Protobuf encoded messages over Serial as input, and output control commands as an emulated Xbox controller, or through a PPM signal that is usable by almost any RC radio for controlling vehicles.
 
 CyberRC is the "server" counterpart to the client libraries in this repo.
@@ -13,63 +13,107 @@ CyberRC has been developed on the Teensy 4.1, but should be portable to the 4.0,
 
 ### TODO: Compatibility matrix
 
-# Dependencies and Development
+# Getting Started - Flashing Firmware to a New Teensy
 
 ## Dependencies
 
-- Arduino IDE
-- Teensy Loader: communicates with the bootloader to flash programs. Follow the instructions [here](https://www.pjrc.com/teensy/loader.html). It comes in a CLI version, or can be installed with the Teensy board files using the araduino IDE.
-- Xinput: controller emulation
-- Nanopb: small ansi C protobuf implementation
+- [Arduino IDE](https://www.arduino.cc/en/software)
+- [VS Code](https://code.visualstudio.com/)
+- [Teensy Loader](https://www.pjrc.com/teensy/loader.html): communicates with the bootloader to flash programs
+- [Xinput](https://github.com/dmadison/ArduinoXInput_Teensy): controller emulation
+- [Nanopb](https://jpa.kapsi.fi/nanopb/): small ansi C protobuf implementation
 
-## Development
+## Preliminaries
 
-I'm using Platformio on VSCode. Platformio should pick up the config in this repo, and install the dependencies that you need to build and deploy this repository.
+1. **Install Teensy Loader**: Download and install the Teensy Loader from [PJRC](https://www.pjrc.com/teensy/loader.html). This tool is required to flash firmware to the Teensy microcontroller.
 
-You will need to install the Xinput boards package for teensy following the instructions in the repository.
-Note that you will need to locate the directory of the teensy board files used by platformio, which will be distinct from those installed by the Arduino IDE. Find it [here](https://github.com/dmadison/ArduinoXInput_Teensy).
+2. **Install PlatformIO in VS Code**:
+   - Open VS Code
+   - Go to Extensions (Ctrl+Shift+X)
+   - Search for "PlatformIO IDE" and install it
+   - Restart VS Code when prompted
+   - Navigate to the PlatformIO extension in VS Code, go to "Platforms" and install the "teensy" platform
 
-I'm including the complete `usb_desc.h` entry here:
+3. **Install XInput Board Support for Teensy**:
+   - XInput is required to enable the Teensy to emulate an Xbox gamepad and appear as a USB game controller to the host system
+   - Install [Teensyduino](https://www.pjrc.com/teensy/teensyduino.html) (version 1.59 recommended)
+   > 🚨 **WARNING - CRITICAL FOR PLATFORMIO USERS**
+   >
+   > PlatformIO uses different framework files than the Arduino IDE! You MUST copy the XInput files to the PlatformIO framework directory, NOT the Arduino directory.
+   >
+   > **Use these PlatformIO paths:**
+   > - Windows: `C:\Users\[username]\.platformio\packages\framework-arduinoteensy`
+   > - MacOS: `/Users/[username]/.platformio/packages/framework-arduinoteensy`  
+   > - Linux: `/home/[username]/.platformio/packages/framework-arduinoteensy`
+   >
+   > **Note**: Only modify the Arduino IDE files if you also plan to use the Arduino IDE for Teensy development. If you're using both Arduino IDE and PlatformIO, you'll need to update both sets of files. For PlatformIO-only development, ignore the Arduino IDE paths in the ArduinoXInput_Teensy documentation.
 
-```c
-#elif defined(USB_XINPUT)
-#end#elif defined(USB_XINPUT)
-  #define DEVICE_CLASS	0xFF
-  #define DEVICE_SUBCLASS	0xFF
-  #define DEVICE_PROTOCOL	0xFF
-  #define BCD_DEVICE	0x0114
-  #define DEVICE_ATTRIBUTES 0xA0
-  #define DEVICE_POWER	0xFA
-  #define VENDOR_ID		0x045e
-  #define PRODUCT_ID		0x028e
-  #define MANUFACTURER_NAME	{0x00A9,'M','i','c','r','o','s','o','f','t'}
-  #define MANUFACTURER_NAME_LEN	10
-  #define PRODUCT_NAME		{'C','o','n','t','r','o','l','l','e','r'}
-  #define PRODUCT_NAME_LEN	10
-  #define EP0_SIZE	8
-  #define NUM_ENDPOINTS	6
-  #define NUM_USB_BUFFERS	24
-  #define NUM_INTERFACE	4
-  #define XINPUT_INTERFACE	0
-  #define XINPUT_RX_ENDPOINT	2
-  #define XINPUT_RX_SIZE 8
-  #define XINPUT_TX_ENDPOINT	1
-  #define XINPUT_TX_SIZE 20
-  #define CONFIG_DESC_SIZE 153
-  #define ENDPOINT1_CONFIG ENDPOINT_TRANSMIT_ONLY
-  #define ENDPOINT2_CONFIG ENDPOINT_RECEIVE_ONLY
-  #define ENDPOINT3_CONFIG ENDPOINT_TRANSMIT_ONLY
-  #define ENDPOINT4_CONFIG ENDPOINT_RECEIVE_ONLY
-  #define ENDPOINT5_CONFIG ENDPOINT_TRANSMIT_AND_RECEIVE
-  #define ENDPOINT6_CONFIG ENDPOINT_TRANSMIT_ONLY
-#endifif
-```
+   **Installation Steps:**
+   1. Download the [ArduinoXInput_Teensy](https://github.com/dmadison/ArduinoXInput_Teensy) repository
+   2. Navigate to your PlatformIO framework directory (see paths above)
+   3. Replace the `teensy3` and `teensy4` folders with the ones from the ArduinoXInput_Teensy repository
+   4. ⚠️ **Warning**: When copying files, select merge to avoid overwriting all existing files - only replace the modified ones
+   - **Note for macOS users**: The Library folder is hidden by default in Finder. To access it:
+     1. In Finder, press `Cmd + Shift + G` (Go to Folder)
+     2. Type `~/Library/` to access your user Library folder
+   - For detailed installation instructions, see the [ArduinoXInput_Teensy documentation](https://github.com/dmadison/ArduinoXInput_Teensy)
 
-In normal Arduino development, you select the desired mode of USB operation through the editor.
-With platformio, this configuration is set in the platformio.ini. By default, platformio filters these build configurations to a default list that is populated to the stock options. You will need to add `USB_XINPUT` to the `BUILTIN_USB_FLAGS`
-in `$HOME/.platformio/platforms/teensy/builder/frameworks/arduino.py` (Linux path).
+4. **Configure PlatformIO for XInput**:
+   > ⚠️ **WARNING**: You must add `USB_XINPUT` to the `BUILTIN_USB_FLAGS` in `$HOME/.platformio/platforms/teensy/builder/frameworks/arduino.py` for XInput functionality to work with PlatformIO.
+   - If you skip this step, 3
+   - The lines should look like this when you're done:
 
-If you get lost implementing these steps, you should refer to the github workflow for this repo at `.github/workflows/firmware-ci.yml`. This workflow automates the Xinput installation for Linux, and should e identical on MacOS.
+     ```python
+      BUILTIN_USB_FLAGS = (
+          "USB_SERIAL",
+          "USB_DUAL_SERIAL",
+          "USB_TRIPLE_SERIAL",
+          "USB_KEYBOARDONLY",
+          "USB_TOUCHSCREEN",
+          "USB_HID_TOUCHSCREEN",
+          "USB_HID",
+          "USB_SERIAL_HID",
+          "USB_MIDI",
+          "USB_MIDI4",
+          "USB_MIDI16",
+          "USB_MIDI_SERIAL",
+          "USB_MIDI4_SERIAL",
+          "USB_MIDI16_SERIAL",
+          "USB_AUDIO",
+          "USB_MIDI_AUDIO_SERIAL",
+          "USB_MIDI16_AUDIO_SERIAL",
+          "USB_MTPDISK",
+          "USB_RAWHID",
+          "USB_FLIGHTSIM",
+          "USB_FLIGHTSIM_JOYSTICK",
+          "USB_EVERYTHING",
+          "USB_DISABLED",
+          "USB_MTPDISK_SERIAL",
+          "USB_XINPUT"
+
+      )```
+
+5. **Clone and Import Project**:
+   - Clone this repository: `git clone https://github.com/friend0/CyberRC.git`
+   - Open VS Code and select "Open Folder"
+   - Navigate to and select the `CyberRC/firmware` directory
+   - PlatformIO should automatically detect the project configuration
+
+6. **Compile the Code and Flash the Device:**
+   - Make sure the teensy is connected via USB to your PC
+   - Ensure the device is in programming mode by pressing the button on the top of the Teensy board - the red LED will glow a dim red, and will not blink
+   - In VS Code, use the toolbar to build and upload the firmware. If you are looking at the main.cpp source file, it will show as a checkmark icon in the top right corner, with a dropdown arrow next to it. Click the arrow and select "Upload" to build and flash the firmware to the Teensy.
+
+## Building and Flashing
+
+Once you've completed the preliminaries above, PlatformIO should automatically detect the project configuration and install the necessary dependencies.
+
+To build and flash:
+
+1. Connect your Teensy via USB
+2. In VS Code, use the PlatformIO toolbar to build and upload the firmware
+
+If you encounter issues, refer to the automated setup in `.github/workflows/firmware-ci.yml` for reference.
 
 # Configuration
 
@@ -86,10 +130,14 @@ For the multi-vehicle case - up to 8 outputs for Teensy3, and 10 for Teensy4 - y
 
 In your client code, you will set up some addressing scheme corresponding vehicles with some line number, and then include that line number in the PPM command message. Refer to the client library implementations for details on how to do this.
 
-## Configuring the Teensy for Xinput and HW Serial
+## PPM Output Pins
 
-By default, the Teensy doesn't come with a usb descriptor that enables Xinput.
-There are some common adaptations used to add an Xinput descriptor, but it does not enable additional hardware serial. Some manual interventions are required to make this work.
+The firmware uses the following pins for PPM output:
+
+- **Teensy 3.1/3.2**: Pins 5, 6, 9, 10, 20, 21, 22, 23 (default: pin 5)
+- **Teensy 4.0/4.1**: Pins 6, 9, 10, 11, 12, 13, 14, 15, 18, 19 (default: pin 6)
+
+By default, only one PPM line is used. See the configuration section below to enable multiple outputs.
 
 ## Building the Protobufs _Needed for manual compilation only_
 

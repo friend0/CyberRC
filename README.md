@@ -6,6 +6,10 @@ CyberRC uses a Teensy 4.1 to simulate an Xbox gamepad, or to generate a PPM sign
 The initial use case is to interface automatic control with the game "Liftoff: Micro Drones". Liftoff provides state feedback over UDP.
 Combined with the CyberRC, closed loop control can be implemented to allow for autonomous flight.
 
+## Building and Flashing
+
+To build and flash the CyberRC firmware to a Teensy device, see the [firmware README](firmware/README.md) for detailed setup instructions, dependencies, and configuration options.
+
 ## Implementation Notes
 
 This implementation does not use the "native" PPM library for the teensy due to an issue with the system crashing on initialization.
