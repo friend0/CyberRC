@@ -17,36 +17,32 @@ CyberRC has been developed on the Teensy 4.1, but should be portable to the 4.0,
 
 ## Dependencies
 
-- [Arduino IDE](https://www.arduino.cc/en/software)
 - [VS Code](https://code.visualstudio.com/)
-- [Teensy Loader](https://www.pjrc.com/teensy/loader.html): communicates with the bootloader to flash programs
-- [Xinput](https://github.com/dmadison/ArduinoXInput_Teensy): controller emulation
-- [Nanopb](https://jpa.kapsi.fi/nanopb/): small ansi C protobuf implementation
+- [PlatformIO](https://platformio.org/): embedded development platform (installed through VS Code extension)
+- [Xinput](https://github.com/dmadison/ArduinoXInput_Teensy): controller emulation (manual setup required)
+- [Nanopb](https://jpa.kapsi.fi/nanopb/): small ansi C protobuf implementation (automatically handled by PlatformIO)
 
 ## Preliminaries
 
-1. **Install Teensy Loader**: Download and install the Teensy Loader from [PJRC](https://www.pjrc.com/teensy/loader.html). This tool is required to flash firmware to the Teensy microcontroller.
+0. **Install VS Code**: Download and install [VS Code](https://code.visualstudio.com/) if you haven't already.
 
-2. **Install PlatformIO in VS Code**:
+1. **Install PlatformIO in VS Code**:
    - Open VS Code
    - Go to Extensions (Ctrl+Shift+X)
    - Search for "PlatformIO IDE" and install it
    - Restart VS Code when prompted
    - Navigate to the PlatformIO extension in VS Code, go to "Platforms" and install the "teensy" platform
 
-3. **Install XInput Board Support for Teensy**:
+2. **Install XInput Board Support for Teensy**:
    - XInput is required to enable the Teensy to emulate an Xbox gamepad and appear as a USB game controller to the host system
-   - Install [Teensyduino](https://www.pjrc.com/teensy/teensyduino.html) (version 1.59 recommended)
    > 🚨 **WARNING - CRITICAL FOR PLATFORMIO USERS**
    >
-   > PlatformIO uses different framework files than the Arduino IDE! You MUST copy the XInput files to the PlatformIO framework directory, NOT the Arduino directory.
+   > The ArduinoXInput_Teensy installation instructions are written for Arduino IDE users. Since we're using PlatformIO, you must adapt these instructions to use the PlatformIO framework directory instead.
    >
-   > **Use these PlatformIO paths:**
+   > **Use these PlatformIO paths (NOT the Arduino IDE paths in the documentation):**
    > - Windows: `C:\Users\[username]\.platformio\packages\framework-arduinoteensy`
    > - MacOS: `/Users/[username]/.platformio/packages/framework-arduinoteensy`  
    > - Linux: `/home/[username]/.platformio/packages/framework-arduinoteensy`
-   >
-   > **Note**: Only modify the Arduino IDE files if you also plan to use the Arduino IDE for Teensy development. If you're using both Arduino IDE and PlatformIO, you'll need to update both sets of files. For PlatformIO-only development, ignore the Arduino IDE paths in the ArduinoXInput_Teensy documentation.
 
    **Installation Steps:**
    1. Download the [ArduinoXInput_Teensy](https://github.com/dmadison/ArduinoXInput_Teensy) repository
@@ -58,7 +54,7 @@ CyberRC has been developed on the Teensy 4.1, but should be portable to the 4.0,
      2. Type `~/Library/` to access your user Library folder
    - For detailed installation instructions, see the [ArduinoXInput_Teensy documentation](https://github.com/dmadison/ArduinoXInput_Teensy)
 
-4. **Configure PlatformIO for XInput**:
+3. **Configure PlatformIO for XInput**:
    > ⚠️ **WARNING**: You must add `USB_XINPUT` to the `BUILTIN_USB_FLAGS` in `$HOME/.platformio/platforms/teensy/builder/frameworks/arduino.py` for XInput functionality to work with PlatformIO.
    - If you skip this step, 3
    - The lines should look like this when you're done:
@@ -93,13 +89,13 @@ CyberRC has been developed on the Teensy 4.1, but should be portable to the 4.0,
 
       )```
 
-5. **Clone and Import Project**:
+4. **Clone and Import Project**:
    - Clone this repository: `git clone https://github.com/friend0/CyberRC.git`
    - Open VS Code and select "Open Folder"
    - Navigate to and select the `CyberRC/firmware` directory
    - PlatformIO should automatically detect the project configuration
 
-6. **Compile the Code and Flash the Device:**
+5. **Compile the Code and Flash the Device:**
    - Make sure the teensy is connected via USB to your PC
    - Ensure the device is in programming mode by pressing the button on the top of the Teensy board - the red LED will glow a dim red, and will not blink
    - In VS Code, use the toolbar to build and upload the firmware. If you are looking at the main.cpp source file, it will show as a checkmark icon in the top right corner, with a dropdown arrow next to it. Click the arrow and select "Upload" to build and flash the firmware to the Teensy.
