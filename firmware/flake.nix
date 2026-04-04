@@ -10,12 +10,16 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
+        pythonEnv = pkgs.python3.withPackages (ps: with ps; [
+          protobuf
+          grpcio-tools
+        ]);
       in
       {
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             platformio-core
-            python3
+            pythonEnv
           ];
 
           shellHook = ''
